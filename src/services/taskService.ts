@@ -51,6 +51,10 @@ const taskService = {
     return api.delete<void>(`/tasks/${id}`);
   },
 
+  deleteTaskAndPomodoros: async (taskId: string): Promise<void> => {
+    return api.patch<void>(`/tasks/${taskId}/status`, { status: 'cancelled' });
+  },
+
   updateTaskStatus: async (id: string, status: TaskStatus): Promise<Task> => {
     return api.patch<Task>(`/tasks/${id}/status`, { status });
   },
