@@ -1,9 +1,11 @@
-import React from "react";
+import React from 'react';
+import Dashboard from './pages/Dashboard/Dashboard';
+import './styles/global.css';
 
 function App() {
   return (
-    <div>
-      <h1>Hello World!</h1>
+    <div className="app">
+      <Dashboard />
     </div>
   );
 }
