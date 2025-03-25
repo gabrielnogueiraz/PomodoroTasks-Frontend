@@ -22,6 +22,7 @@ const Dashboard: React.FC = () => {
   const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">(
     "medium"
   );
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -52,6 +53,10 @@ const Dashboard: React.FC = () => {
     };
   }, [isRunning, time]);
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -61,7 +66,6 @@ const Dashboard: React.FC = () => {
   };
 
   const calculateProgress = (): number => {
-    // Determinar o tempo total com base no modo atual
     let totalTime;
     if (timerMode === "pomodoro") {
       totalTime = customTime * 60;
@@ -71,13 +75,8 @@ const Dashboard: React.FC = () => {
       totalTime = 15 * 60;
     }
 
-    // Calcular a porcentagem de progresso
     const progress = time / totalTime;
-
-    // Circunferência do círculo (2 * PI * raio)
     const circumference = 2 * Math.PI * 45;
-
-    // Retornar o offset com base no progresso
     return circumference * (1 - progress);
   };
 
@@ -171,6 +170,7 @@ const Dashboard: React.FC = () => {
 
   const handleTaskSelect = (taskId: string) => {
     setSelectedTaskId(taskId);
+    setSidebarOpen(false);
   };
 
   const handleCreateTask = async () => {
@@ -179,13 +179,12 @@ const Dashboard: React.FC = () => {
     try {
       const newTask = await taskService.createTask({
         title: newTaskTitle,
-        priority: taskPriority, // Usar a prioridade selecionada
+        priority: taskPriority,
         estimatedPomodoros: 1,
       });
 
       setTasks([...tasks, newTask]);
       setNewTaskTitle("");
-      // Reset para médio após criar a tarefa
       setTaskPriority("medium");
     } catch (error) {
       console.error("Erro ao criar tarefa:", error);
@@ -197,7 +196,6 @@ const Dashboard: React.FC = () => {
 
     try {
       await taskService.updateTaskStatus(taskId, "cancelled");
-
       setTasks(tasks.filter((task) => task.id !== taskId));
 
       if (taskId === selectedTaskId) {
@@ -221,12 +219,30 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={styles.dashboard}>
-      <div className={styles.sidebar}>
-        <div className={styles.logo}>
-          <h1 className={styles.fadeIn}>Pomodoro Tasks</h1>
-        </div>
+    <div className={styles.dashboardContainer}>
+      <button
+        onClick={toggleSidebar}
+        className={`${styles.sidebarToggle} ${
+          sidebarOpen ? styles.active : ""
+        }`}
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
 
+      {sidebarOpen && (
+        <div
+          className={styles.overlay}
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      <aside
+        className={`${styles.sidebar} ${
+          sidebarOpen ? styles.sidebarVisible : ""
+        }`}
+      >
         <div className={styles.taskCreator}>
           <div className={styles.inputWrapper}>
             <input
@@ -287,7 +303,12 @@ const Dashboard: React.FC = () => {
         <div className={styles.taskList}>
           <h2>Tarefas Pendentes</h2>
           {tasks.length === 0 ? (
-            <p className={styles.emptyState}>Nenhuma tarefa pendente</p>
+            <p className={styles.emptyState}>
+              Nenhuma tarefa pendente. Adicione tarefas aqui ou no{" "}
+              <a href="/tasks" className={styles.taskBoardLink}>
+                Quadro de Tarefas
+              </a>
+            </p>
           ) : (
             <ul className={styles.fadeIn}>
               {tasks.map((task, index) => (
@@ -334,7 +355,7 @@ const Dashboard: React.FC = () => {
             </ul>
           )}
         </div>
-      </div>
+      </aside>
 
       <main className={styles.mainContent}>
         <div className={`${styles.timerSection} ${styles.fadeIn}`}>
@@ -375,14 +396,12 @@ const Dashboard: React.FC = () => {
               )}
             </div>
             <svg className={styles.timerCircle} viewBox="0 0 100 100">
-              {/* Círculo de fundo (completo) */}
               <circle
                 className={styles.timerCircleBackground}
                 cx="50"
                 cy="50"
                 r="45"
               />
-              {/* Círculo de progresso (diminui com o tempo) */}
               <circle
                 className={styles.timerCircleProgress}
                 cx="50"
@@ -421,6 +440,19 @@ const Dashboard: React.FC = () => {
               </button>
             )}
           </div>
+
+          {selectedTaskId && (
+            <div className={styles.currentTask}>
+              <h3>Trabalhando em:</h3>
+              <p>{tasks.find((t) => t.id === selectedTaskId)?.title}</p>
+              <button
+                onClick={() => setSelectedTaskId(undefined)}
+                className={styles.deselectButton}
+              >
+                Mudar Tarefa
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>
