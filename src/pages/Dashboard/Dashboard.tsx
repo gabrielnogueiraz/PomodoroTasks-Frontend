@@ -440,19 +440,6 @@ const Dashboard: React.FC = () => {
               </button>
             )}
           </div>
-
-          {selectedTaskId && (
-            <div className={styles.currentTask}>
-              <h3>Trabalhando em:</h3>
-              <p>{tasks.find((t) => t.id === selectedTaskId)?.title}</p>
-              <button
-                onClick={() => setSelectedTaskId(undefined)}
-                className={styles.deselectButton}
-              >
-                Mudar Tarefa
-              </button>
-            </div>
-          )}
         </div>
       </main>
     </div>
