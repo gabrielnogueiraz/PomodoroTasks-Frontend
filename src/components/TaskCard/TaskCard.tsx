@@ -7,20 +7,22 @@ interface TaskItem extends Task {
   columnId: string;
 }
 
-const TaskCard: React.FC<{
+interface TaskCardProps {
   task: TaskItem;
-  moveTask: (taskId: string, fromColumn: string, toColumn: string) => void;
-  onDeleteTask: (taskId: string, e: React.MouseEvent) => void; // Nova prop
-}> = ({ task, moveTask, onDeleteTask }) => {
+  moveTask: (taskId: string, fromColumn: string, toColumn: string) => Promise<void>;
+  onDeleteTask: (taskId: string, e: React.MouseEvent) => void;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({ task, moveTask, onDeleteTask }) => {
   const ref = React.useRef<HTMLDivElement>(null);
 
-  const [{ isDragging }, connectDrag] = useDrag(() => ({
+  const [{ isDragging }, connectDrag] = useDrag({
     type: "TASK",
     item: { id: task.id, columnId: task.columnId },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
+  });
 
   const priorityClass = `priority${
     task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
