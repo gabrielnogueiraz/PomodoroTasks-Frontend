@@ -698,6 +698,7 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
   z-index: 101;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
+  margin-top: 18px;
 }
 
 .sidebarToggle:hover {
