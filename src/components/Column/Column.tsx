@@ -11,8 +11,12 @@ interface ColumnProps {
     title: string;
     taskIds: string[];
   };
-  tasks: (Task & { columnId: string })[];
-  moveTask: (taskId: string, fromColumnId: string, toColumnId: string) => void;
+  tasks: TaskItem[];
+  moveTask: (
+    taskId: string,
+    fromColumnId: string,
+    toColumnId: string
+  ) => Promise<void>;
   onAddTask: (columnId: string) => void;
   onRenameColumn: (columnId: string, newTitle: string) => void;
   onDeleteColumn: (columnId: string) => void;
@@ -43,14 +47,17 @@ const Column: React.FC<ColumnProps> = ({
 
   const ref = React.useRef<HTMLDivElement>(null);
 
-  const [, connectDrop] = useDrop(() => ({
+  // Dentro do componente Column, atualize o useDrop
+  const [, connectDrop] = useDrop({
     accept: "TASK",
     drop: (item: { id: string; columnId: string }) => {
       if (item.columnId !== column.id) {
-        moveTask(item.id, item.columnId, column.id);
+        moveTask(item.id, item.columnId, column.id).catch((error) =>
+          console.error("Erro ao mover tarefa:", error)
+        );
       }
     },
-  }));
+  });
 
   connectDrop(ref);
 
