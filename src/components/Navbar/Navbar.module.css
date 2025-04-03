@@ -4,7 +4,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 90px;
+  height: 85px; /* Reduzido de 90px para melhor responsividade */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 100;
@@ -17,18 +17,15 @@
 }
 
 .logoImage {
-  height: 250px; /* Ajuste conforme o tamanho da sua logo */
+  height: 200px; /* Tamanho mais apropriado para uma navbar */
+  width: auto;
   max-width: 100%;
-  filter: drop-shadow(
-    0 0 10px rgba(106, 27, 154, 0.3)
-  ); /* Mantendo o efeito de sombra */
+  filter: drop-shadow(0 0 10px rgba(106, 27, 154, 0.3)); /* Mantendo o efeito de sombra */
   transition: all 0.3s ease;
 }
 
 .logoImage:hover {
-  filter: drop-shadow(
-    0 0 15px rgba(106, 27, 154, 0.5)
-  ); /* Efeito de hover similar */
+  filter: drop-shadow(0 0 15px rgba(106, 27, 154, 0.5)); /* Efeito de hover similar */
 }
 
 /* O resto do CSS permanece inalterado */
@@ -75,4 +72,99 @@
 
 .activeLink::after {
   width: 100% !important;
+}
+
+/* Menu de hambúrguer para telas menores */
+.mobileMenuButton {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.hamburger {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 5px auto;
+  background-color: #f5f5f5;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 1.5rem;
+  }
+  
+  .mobileMenuButton {
+    display: block;
+    position: absolute;
+    right: 1.5rem;
+    z-index: 101;
+  }
+  
+  .mobileMenuOpen .hamburger:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+  
+  .mobileMenuOpen .hamburger:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .mobileMenuOpen .hamburger:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+  
+  .navItems {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    background-color: #1a1a24;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    transform: translateY(-100vh);
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+    z-index: 90;
+  }
+  
+  .navItemsVisible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar {
+    padding: 0 1rem;
+    height: 60px;
+  }
+  
+  .logoImage {
+    height: 110px;
+  }
+  
+  .navItems {
+    top: 60px;
+    padding: 1rem;
+  }
+  
+  .navItems li a {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .navbar {
+    padding: 0 0.8rem;
+  }
+  
+  .logoImage {
+    height: 35px;
+  }
 }
