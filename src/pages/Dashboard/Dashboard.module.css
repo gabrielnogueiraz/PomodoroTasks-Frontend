@@ -623,27 +623,26 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
-/* Adicionar esses estilos ao fim do arquivo */
-
-/* Sidebar toggle e animação */
 .sidebar {
-  position: absolute;
-  left: -320px; /* Ocultar por padrão */
-  top: 0;
+  position: fixed;
+  left: -320px;
+  top: 70px;
   bottom: 0;
   width: 320px;
+  max-width: 85vw;
   background-color: #1a1a24;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  transition: left 0.3s ease;
+  transition: all 0.3s ease;
   z-index: 100;
 }
 
 .sidebarVisible {
   left: 0;
+  transform: none !important;
 }
 
 .overlay {
@@ -667,20 +666,31 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
   width: 100%;
 }
 
-/* Em telas menores, a sidebar fica oculta por padrão */
 @media (max-width: 768px) {
   .sidebar {
-    position: absolute;
-    height: 100%;
     transform: translateX(-100%);
+    left: 0;
   }
 
-  .sidebar.open {
+  .sidebar.sidebarVisible {
     transform: translateX(0);
+  }
+
+  .sidebarToggle {
+    top: 75px;
+  }
+
+  .taskInput,
+  .addTaskButton {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .taskList h2 {
+    font-size: 1rem;
   }
 }
 
-/* Botão para abrir/fechar a sidebar */
 .sidebarToggle {
   position: fixed;
   top: 80px;
@@ -699,6 +709,10 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   margin-top: 18px;
+}
+
+.sidebarToggle.active {
+  left: 330px;
 }
 
 .sidebarToggle:hover {
@@ -731,6 +745,7 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
 @media (max-width: 768px) {
   .sidebarToggle {
     display: flex;
+    top: 75px;
   }
 
   .mainContent {
@@ -809,4 +824,152 @@ div:has(.timerCircleProgress):has(~ .timerControls .pauseButton)
 .taskBoardLink:hover {
   color: #9c27b0;
   text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+  .timerCircleContainer {
+    width: 280px;
+    height: 280px;
+  }
+
+  .timeText {
+    font-size: 3.2rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .timerCircleContainer {
+    width: 260px;
+    height: 260px;
+  }
+
+  .timeText {
+    font-size: 3rem;
+  }
+
+  .timerSection {
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .timerCircleContainer {
+    width: 240px;
+    height: 240px;
+    margin-bottom: 1.5rem;
+  }
+
+  .timeText {
+    font-size: 2.8rem;
+  }
+
+  .timerSection {
+    padding: 1.5rem;
+    max-width: 400px;
+  }
+
+  .startButton,
+  .pauseButton {
+    padding: 0.7rem 2.5rem;
+    font-size: 1rem;
+  }
+
+  .modeButton {
+    padding: 0.5rem 0.8rem;
+    margin: 0 0.3rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .timerCircleContainer {
+    width: 220px;
+    height: 220px;
+  }
+
+  .timeText {
+    font-size: 2.5rem;
+  }
+
+  .taskName {
+    font-size: 0.9rem;
+    max-width: 90%;
+  }
+
+  .timerSection {
+    width: calc(100% - 2rem);
+    padding: 1.2rem;
+    max-width: 350px;
+  }
+
+  .startButton,
+  .pauseButton {
+    padding: 0.6rem 2rem;
+    font-size: 0.95rem;
+  }
+
+  .modeButton {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.7rem;
+    margin: 0 0.2rem;
+  }
+
+  .timerModes {
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    padding: 1rem;
+    width: 280px;
+  }
+
+  /* Ajustar itens dentro da sidebar para telas muito pequenas */
+  .taskCreator {
+    flex-direction: column;
+  }
+
+  .inputWrapper {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .taskInput {
+    border-radius: 4px;
+    padding-right: 10px;
+  }
+
+  .prioritySelector {
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .addTaskButton {
+    width: 100%;
+    border-radius: 4px;
+  }
+}
+
+/* Ajustes para telas muito pequenas */
+@media (max-width: 380px) {
+  .timerCircleContainer {
+    width: 200px;
+    height: 200px;
+  }
+
+  .timeText {
+    font-size: 2.2rem;
+  }
+
+  .taskName {
+    font-size: 0.8rem;
+  }
+
+  .timerControls {
+    margin: 1.5rem 0;
+  }
 }

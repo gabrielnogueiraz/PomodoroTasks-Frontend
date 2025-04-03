@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "https://pomodorotasks-api.onrender.com/api";
 
 export type ApiError = {
   status: number;
