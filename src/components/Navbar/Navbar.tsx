@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import logo from "../../assets/logo.png";
+import authService from "../../services/authService";
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const user = authService.getUser();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -12,6 +15,11 @@ const Navbar: React.FC = () => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate("/login");
   };
 
   return (
@@ -50,6 +58,12 @@ const Navbar: React.FC = () => {
           >
             Quadro de Tarefas
           </NavLink>
+        </li>
+        <li className={styles.userSection}>
+          <span className={styles.userName}>{user?.name}</span>
+          <button onClick={handleLogout} className={styles.logoutButton}>
+            Sair
+          </button>
         </li>
       </ul>
     </nav>
