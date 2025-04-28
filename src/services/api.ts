@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://pomodorotasks-api.onrender.com/api";
+const API_BASE_URL = "http://localhost:8080/api";
 
 export type ApiError = {
   status: number;
@@ -21,6 +21,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return data as T;
 }
 
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem("@PomodoroTasks:token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const api = {
   get: async <T>(
     endpoint: string,
@@ -37,7 +42,8 @@ export const api = {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-      },
+        ...getAuthHeader(),
+      } as HeadersInit,
     });
 
     return handleResponse<T>(response);
@@ -48,7 +54,8 @@ export const api = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-      },
+        ...getAuthHeader(),
+      } as HeadersInit,
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -60,7 +67,8 @@ export const api = {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-      },
+        ...getAuthHeader(),
+      } as HeadersInit,
       body: JSON.stringify(data),
     });
 
@@ -72,7 +80,8 @@ export const api = {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-      },
+        ...getAuthHeader(),
+      } as HeadersInit,
       body: JSON.stringify(data),
     });
 
@@ -84,7 +93,8 @@ export const api = {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-      },
+        ...getAuthHeader(),
+      } as HeadersInit,
     });
 
     return handleResponse<T>(response);
