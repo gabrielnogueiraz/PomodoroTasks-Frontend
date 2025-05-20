@@ -57,7 +57,7 @@ const Home: React.FC = () => {
 
           <div className={styles.headerActions}>
             <a
-              href="https://github.com/seu-usuario/pomodorotasks"
+              href="https://github.com/gabrielnogueiraz/PomodoroTasks-Frontend"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.githubButton}
@@ -221,7 +221,7 @@ const Home: React.FC = () => {
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.contentWrapper}>
-          <p>© 2025 PomodoroTasks. Todos os direitos reservados.</p>
+          <p>© 2025 Gabriel Nogueira. Todos os direitos reservados.</p>
           <div className={styles.footerLinks}>
             <a href="#">Termos</a>
             <a href="#">Privacidade</a>
