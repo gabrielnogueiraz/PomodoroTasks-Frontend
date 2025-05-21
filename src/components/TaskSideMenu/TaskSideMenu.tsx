@@ -37,6 +37,15 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
     setTaskPriority("medium");
   };
 
+  const handlePrioritySelect = (
+    priority: "low" | "medium" | "high",
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTaskPriority(priority);
+  };
+
   return (
     <>
       {isOpen && <div className={styles.overlay} onClick={onClose}></div>}
@@ -60,7 +69,7 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
                 className={`${styles.priorityButton} ${
                   taskPriority === "low" ? styles.activePriority : ""
                 }`}
-                onClick={() => setTaskPriority("low")}
+                onClick={(e) => handlePrioritySelect("low", e)}
                 title="Prioridade Baixa"
               >
                 <div
@@ -73,7 +82,7 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
                 className={`${styles.priorityButton} ${
                   taskPriority === "medium" ? styles.activePriority : ""
                 }`}
-                onClick={() => setTaskPriority("medium")}
+                onClick={(e) => handlePrioritySelect("medium", e)}
                 title="Prioridade Média"
               >
                 <div
@@ -86,7 +95,7 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
                 className={`${styles.priorityButton} ${
                   taskPriority === "high" ? styles.activePriority : ""
                 }`}
-                onClick={() => setTaskPriority("high")}
+                onClick={(e) => handlePrioritySelect("high", e)}
                 title="Prioridade Alta"
               >
                 <div
@@ -120,9 +129,9 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
                   key={task.id}
                   className={`${styles.taskItem} ${
                     selectedTaskId === task.id ? styles.selectedTask : ""
-                  } ${styles.slideIn}`}
+                  }`}
                   onClick={() => onTaskSelect(task.id)}
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  style={{ "--index": index } as React.CSSProperties}
                 >
                   <div className={styles.taskHeader}>
                     <h3>{task.title}</h3>
