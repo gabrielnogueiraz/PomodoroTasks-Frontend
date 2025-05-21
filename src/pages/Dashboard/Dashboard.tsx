@@ -17,11 +17,7 @@ const Dashboard: React.FC = () => {
   const [timerMode, setTimerMode] = useState<
     "pomodoro" | "shortBreak" | "longBreak"
   >("pomodoro");
-  const [newTaskTitle, setNewTaskTitle] = useState<string>("");
   const [customTime, setCustomTime] = useState<number>(25);
-  const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">(
-    "medium"
-  );
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -142,7 +138,7 @@ const Dashboard: React.FC = () => {
           setTime(5 * 60);
         } else if (timerMode === "shortBreak") {
           setTimerMode("pomodoro");
-          setTime(25 * 60);
+          setTime(customTime * 60);
         }
       } catch (error) {
         console.error("Erro ao completar pomodoro:", error);
@@ -168,45 +164,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleTaskSelect = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setSidebarOpen(false);
-  };
-
-  const handleCreateTask = async () => {
-    if (newTaskTitle.trim() === "") return;
-
-    try {
-      const newTask = await taskService.createTask({
-        title: newTaskTitle,
-        priority: taskPriority,
-        estimatedPomodoros: 1,
-      });
-
-      setTasks([...tasks, newTask]);
-      setNewTaskTitle("");
-      setTaskPriority("medium");
-    } catch (error) {
-      console.error("Erro ao criar tarefa:", error);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    try {
-      await taskService.updateTaskStatus(taskId, "cancelled");
-      setTasks(tasks.filter((task) => task.id !== taskId));
-
-      if (taskId === selectedTaskId) {
-        setSelectedTaskId(undefined);
-      }
-    } catch (error) {
-      console.error("Erro ao excluir tarefa:", error);
-      alert("Não foi possível excluir a tarefa. Por favor, tente novamente.");
-    }
-  };
-
   const handleCustomTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (value > 0) {
@@ -220,143 +177,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <button
-        onClick={toggleSidebar}
-        className={`${styles.sidebarToggle} ${
-          sidebarOpen ? styles.active : ""
-        }`}
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      {sidebarOpen && (
-        <div
-          className={styles.overlay}
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
-
-      <aside
-        className={`${styles.sidebar} ${
-          sidebarOpen ? styles.sidebarVisible : ""
-        }`}
-      >
-        <div className={styles.taskCreator}>
-          <div className={styles.inputWrapper}>
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="Nova tarefa..."
-              className={styles.taskInput}
-              onKeyPress={(e) => e.key === "Enter" && handleCreateTask()}
-            />
-            <div className={styles.prioritySelector}>
-              <button
-                type="button"
-                className={`${styles.priorityButton} ${
-                  taskPriority === "low" ? styles.activePriority : ""
-                }`}
-                onClick={() => setTaskPriority("low")}
-                title="Prioridade Baixa"
-              >
-                <div
-                  className={styles.priorityDot}
-                  style={{ backgroundColor: "#388e3c" }}
-                ></div>
-              </button>
-              <button
-                type="button"
-                className={`${styles.priorityButton} ${
-                  taskPriority === "medium" ? styles.activePriority : ""
-                }`}
-                onClick={() => setTaskPriority("medium")}
-                title="Prioridade Média"
-              >
-                <div
-                  className={styles.priorityDot}
-                  style={{ backgroundColor: "#f57c00" }}
-                ></div>
-              </button>
-              <button
-                type="button"
-                className={`${styles.priorityButton} ${
-                  taskPriority === "high" ? styles.activePriority : ""
-                }`}
-                onClick={() => setTaskPriority("high")}
-                title="Prioridade Alta"
-              >
-                <div
-                  className={styles.priorityDot}
-                  style={{ backgroundColor: "#c62828" }}
-                ></div>
-              </button>
-            </div>
-          </div>
-          <button onClick={handleCreateTask} className={styles.addTaskButton}>
-            Adicionar
-          </button>
-        </div>
-
-        <div className={styles.taskList}>
-          <h2>Tarefas Pendentes</h2>
-          {tasks.length === 0 ? (
-            <p className={styles.emptyState}>
-              Nenhuma tarefa pendente. Adicione tarefas aqui ou no{" "}
-              <a href="/tasks" className={styles.taskBoardLink}>
-                Quadro de Tarefas
-              </a>
-            </p>
-          ) : (
-            <ul className={styles.fadeIn}>
-              {tasks.map((task, index) => (
-                <li
-                  key={task.id}
-                  className={`${styles.taskItem} ${
-                    selectedTaskId === task.id ? styles.selectedTask : ""
-                  } ${styles.slideIn}`}
-                  onClick={() => handleTaskSelect(task.id)}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className={styles.taskHeader}>
-                    <h3>{task.title}</h3>
-                    <div className={styles.taskActions}>
-                      <span
-                        className={
-                          styles[
-                            `priority${
-                              task.priority.charAt(0).toUpperCase() +
-                              task.priority.slice(1)
-                            }`
-                          ]
-                        }
-                      >
-                        {task.priority}
-                      </span>
-                      <button
-                        className={styles.deleteButton}
-                        onClick={(e) => handleDeleteTask(task.id, e)}
-                        title="Excluir tarefa"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                  <div className={styles.taskProgress}>
-                    <span>
-                      {task.completedPomodoros}/{task.estimatedPomodoros}{" "}
-                      pomodoros
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </aside>
-
       <main className={styles.mainContent}>
         <div className={`${styles.timerSection} ${styles.fadeIn}`}>
           <div className={styles.timerModes}>
