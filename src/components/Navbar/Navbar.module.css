@@ -252,6 +252,52 @@
   }
 }
 
+.taskIconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 12px;
+}
+
+.taskIconButton:hover {
+  background-color: rgba(106, 27, 154, 0.15);
+  color: white;
+  transform: scale(1.1);
+}
+
+.taskIconButton svg {
+  font-size: 1.4rem;
+}
+
+/* Ajustes de posicionamento para o mobile */
+@media (max-width: 768px) {
+  .taskIconButton {
+    position: absolute;
+    left: 50px;
+    z-index: 102;
+  }
+}
+
+@media (max-width: 576px) {
+  .taskIconButton {
+    width: 36px;
+    height: 36px;
+    left: 45px;
+  }
+
+  .taskIconButton svg {
+    font-size: 1.2rem;
+  }
+}
+
 @media (max-width: 576px) {
   .navbarContainer {
     padding: 0.6rem 1rem;
