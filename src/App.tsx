@@ -15,6 +15,7 @@ import Register from "./pages/Register/Register";
 import Home from "./pages/Home/Home"; // Importar o componente Home
 import Navbar from "./components/Navbar/Navbar";
 import authService from "./services/authService";
+import { TaskProvider } from "./hooks/TaskProvider"; // Importando o TaskProvider
 import "./styles/global.css";
 
 interface PrivateRouteProps {
@@ -38,68 +39,70 @@ function App() {
   return (
     <DndProvider backend={HTML5Backend}>
       <Router>
-        <div className="app">
-          {/* Mostrar Navbar apenas quando autenticado e não estiver na página home */}
-          {isAuthenticated && <Navbar />}
-          <div className="content">
-            <Routes>
-              {/* Rota Home - pública, sem autenticação necessária */}
-              <Route path="/" element={<Home />} />
+        <TaskProvider>
+          <div className="app">
+            {/* Mostrar Navbar apenas quando autenticado e não estiver na página home */}
+            {isAuthenticated && <Navbar />}
+            <div className="content">
+              <Routes>
+                {/* Rota Home - pública, sem autenticação necessária */}
+                <Route path="/" element={<Home />} />
 
-              {/* Acesso à página de login */}
-              <Route
-                path="/login"
-                element={
-                  isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
-                  ) : (
-                    <Login />
-                  )
-                }
-              />
+                {/* Acesso à página de login */}
+                <Route
+                  path="/login"
+                  element={
+                    isAuthenticated ? (
+                      <Navigate to="/dashboard" replace />
+                    ) : (
+                      <Login />
+                    )
+                  }
+                />
 
-              <Route
-                path="/register"
-                element={
-                  isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
-                  ) : (
-                    <Register />
-                  )
-                }
-              />
+                <Route
+                  path="/register"
+                  element={
+                    isAuthenticated ? (
+                      <Navigate to="/dashboard" replace />
+                    ) : (
+                      <Register />
+                    )
+                  }
+                />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                }
-              />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  }
+                />
 
-              <Route
-                path="/tasks"
-                element={
-                  <PrivateRoute>
-                    <Tasks />
-                  </PrivateRoute>
-                }
-              />
+                <Route
+                  path="/tasks"
+                  element={
+                    <PrivateRoute>
+                      <Tasks />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* Redirecionar /app para dashboard (caso tenha links para /app) */}
-              <Route
-                path="/app"
-                element={
-                  <Navigate
-                    to={isAuthenticated ? "/dashboard" : "/login"}
-                    replace
-                  />
-                }
-              />
-            </Routes>
+                {/* Redirecionar /app para dashboard (caso tenha links para /app) */}
+                <Route
+                  path="/app"
+                  element={
+                    <Navigate
+                      to={isAuthenticated ? "/dashboard" : "/login"}
+                      replace
+                    />
+                  }
+                />
+              </Routes>
+            </div>
           </div>
-        </div>
+        </TaskProvider>
       </Router>
     </DndProvider>
   );
