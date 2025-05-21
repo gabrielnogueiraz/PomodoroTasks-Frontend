@@ -1,37 +1,22 @@
 import React, { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
-import taskService, { Task } from "../../services/taskService";
+import taskService from "../../services/taskService";
 import pomodoroService, {
   Pomodoro,
   CreatePomodoroDTO,
 } from "../../services/pomodoroService";
+import { useTaskContext } from "../../hooks/TaskProvider";
 
 const Dashboard: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, selectedTaskId, refreshTasks } = useTaskContext();
+
   const [activePomodoro, setActivePomodoro] = useState<Pomodoro | null>(null);
   const [time, setTime] = useState<number>(25 * 60); // 25 minutos em segundos
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(
-    undefined
-  );
   const [timerMode, setTimerMode] = useState<
     "pomodoro" | "shortBreak" | "longBreak"
   >("pomodoro");
   const [customTime, setCustomTime] = useState<number>(25);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const pendingTasks = await taskService.getTasks("pending");
-        setTasks(pendingTasks);
-      } catch (error) {
-        console.error("Erro ao carregar tarefas:", error);
-      }
-    };
-
-    fetchTasks();
-  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -48,10 +33,6 @@ const Dashboard: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [isRunning, time]);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -126,8 +107,8 @@ const Dashboard: React.FC = () => {
               completedPomodoros: task.completedPomodoros + 1,
             });
 
-            const updatedTasks = await taskService.getTasks("pending");
-            setTasks(updatedTasks);
+            // Atualizar a lista de tarefas após completar um pomodoro
+            await refreshTasks();
           }
         }
 
