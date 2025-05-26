@@ -39,3 +39,27 @@ input:focus {
   flex: 1;
   display: flex;
 }
+
+.app .content {
+  position: relative;
+  min-height: 100vh;
+  padding-top: 80px; /* Espaço para a navbar */
+}
+
+/* Para páginas que precisam ocupar toda a tela (como Lumi) */
+.full-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding-top: 70px; /* Espaço para a navbar */
+}
+
+/* Ajuste específico para páginas de dashboard e tasks */
+.dashboard-page,
+.tasks-page {
+  padding: 2rem;
+  margin-top: 20px; /* Espaço adicional após a navbar */
+}
