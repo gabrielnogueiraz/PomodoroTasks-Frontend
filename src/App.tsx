@@ -17,6 +17,7 @@ import Navbar from "./components/Navbar/Navbar";
 import authService from "./services/authService";
 import { TaskProvider } from "./hooks/TaskProvider"; // Importando o TaskProvider
 import "./styles/global.css";
+import Lumi from "./pages/Lumi/Lumi";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -97,6 +98,15 @@ function App() {
                       to={isAuthenticated ? "/dashboard" : "/login"}
                       replace
                     />
+                  }
+                />
+
+                <Route
+                  path="/lumi"
+                  element={
+                    <PrivateRoute>
+                      <Lumi />
+                    </PrivateRoute>
                   }
                 />
               </Routes>
