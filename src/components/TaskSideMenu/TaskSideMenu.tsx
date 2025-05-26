@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styles from "./TaskSideMenu.module.css";
 import { Task } from "../../services/taskService";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface TaskSideMenuProps {
   tasks: Task[];
@@ -53,6 +54,10 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
       <aside
         className={`${styles.sidebar} ${isOpen ? styles.sidebarVisible : ""}`}
       >
+        <button className={styles.closeButton} onClick={onClose}>
+          <CloseIcon />
+        </button>
+
         <div className={styles.taskCreator}>
           <div className={styles.inputWrapper}>
             <input
