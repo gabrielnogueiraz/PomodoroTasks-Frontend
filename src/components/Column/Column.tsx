@@ -21,6 +21,7 @@ interface ColumnProps {
   onRenameColumn: (columnId: string, newTitle: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onDeleteTask: (taskId: string, e: React.MouseEvent) => void;
+  onCompleteTask?: (taskId: string, e: React.MouseEvent) => void;
 }
 
 interface Column {
@@ -41,6 +42,7 @@ const Column: React.FC<ColumnProps> = ({
   onRenameColumn,
   onDeleteColumn,
   onDeleteTask,
+  onCompleteTask,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
@@ -103,15 +105,14 @@ const Column: React.FC<ColumnProps> = ({
             </div>
           </>
         )}
-      </div>
-
-      <div className={styles.taskList}>
+      </div>      <div className={styles.taskList}>
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
             task={task}
             moveTask={moveTask}
             onDeleteTask={onDeleteTask}
+            onCompleteTask={onCompleteTask}
           />
         ))}
         {tasks.length === 0 && (
