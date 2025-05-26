@@ -135,7 +135,7 @@ const Navbar: React.FC = () => {
                 }
                 onClick={closeMenu}
               >
-                Dashboard
+                Pomodoro
               </NavLink>
             </li>
             <li>
@@ -146,7 +146,7 @@ const Navbar: React.FC = () => {
                 }
                 onClick={closeMenu}
               >
-                Quadro de Tarefas
+                Kanban
               </NavLink>
             </li>
 
@@ -166,7 +166,7 @@ const Navbar: React.FC = () => {
           <div className={styles.userSection}>
             <span className={styles.userName}>{user?.name}</span>
             <button onClick={handleLogout} className={styles.logoutButton}>
-              <LogoutIcon style={{ fontSize: "1rem" }} /> Sair
+              <LogoutIcon style={{ fontSize: "1rem" }} /> 
             </button>
           </div>
         </div>
