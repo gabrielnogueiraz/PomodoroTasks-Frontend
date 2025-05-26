@@ -7,9 +7,16 @@ interface TaskContextType {
   setSelectedTaskId: (id: string | undefined) => void;
   createTask: (
     title: string,
-    priority: "low" | "medium" | "high"
+    priority: "low" | "medium" | "high",
+    description?: string,
+    startDate?: string,
+    endDate?: string,
+    startTime?: string,
+    endTime?: string
   ) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  completeTask: (taskId: string) => Promise<void>;
+  uncompleteTask: (taskId: string) => Promise<void>;
   refreshTasks: () => Promise<void>;
 }
 
@@ -43,15 +50,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     refreshTasks();
   }, []);
-
   const createTask = async (
     title: string,
-    priority: "low" | "medium" | "high"
+    priority: "low" | "medium" | "high",
+    description?: string,
+    startDate?: string,
+    endDate?: string,
+    startTime?: string,
+    endTime?: string
   ) => {
     try {
       const newTask = await taskService.createTask({
         title,
         priority,
+        description,
+        startDate,
+        endDate,
+        startTime,
+        endTime,
         estimatedPomodoros: 1,
       });
 
@@ -76,12 +92,38 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const completeTask = async (taskId: string) => {
+    try {
+      const updatedTask = await taskService.completeTask(taskId);
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
+      );
+    } catch (error) {
+      console.error("Erro ao marcar tarefa como concluída:", error);
+      throw error;
+    }
+  };
+
+  const uncompleteTask = async (taskId: string) => {
+    try {
+      const updatedTask = await taskService.uncompleteTask(taskId);
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
+      );
+    } catch (error) {
+      console.error("Erro ao desmarcar tarefa como concluída:", error);
+      throw error;
+    }
+  };
+
   const value = {
     tasks,
     selectedTaskId,
     setSelectedTaskId,
     createTask,
     deleteTask,
+    completeTask,
+    uncompleteTask,
     refreshTasks,
   };
 
