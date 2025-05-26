@@ -10,8 +10,13 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   estimatedPomodoros: number;
   completedPomodoros: number;
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +26,10 @@ export interface CreateTaskDTO {
   description?: string;
   priority: TaskPriority;
   dueDate?: string;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   estimatedPomodoros: number;
 }
 
@@ -57,6 +66,14 @@ const taskService = {
 
   updateTaskStatus: async (id: string, status: TaskStatus): Promise<Task> => {
     return api.patch<Task>(`/tasks/${id}/status`, { status });
+  },
+  // Novas funções para conclusão de tarefas
+  completeTask: async (id: string): Promise<Task> => {
+    return api.patch<Task>(`/tasks/${id}/complete`, {});
+  },
+
+  uncompleteTask: async (id: string): Promise<Task> => {
+    return api.patch<Task>(`/tasks/${id}/incomplete`, {});
   },
 };
 
