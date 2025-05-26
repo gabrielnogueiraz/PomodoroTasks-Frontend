@@ -353,178 +353,431 @@
 
 .cancelButton:hover {
   background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
 
-/* Prioridade nos formulários */
-.priorityButtons {
-  display: flex;
-  gap: 1rem;
+/* Estilos para tarefas concluídas */
+.completedTask {
+  opacity: 0.7;
+  background-color: #1a2a1a;
+  border-left-color: #4caf50;
 }
 
-.priorityButton {
-  background-color: transparent;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  cursor: pointer;
-  transition: all 0.2s;
-  opacity: 0.5;
+.completedTask .taskHeader h3 {
+  text-decoration: line-through;
+  color: #888;
 }
 
-.priorityButton:hover {
-  opacity: 0.8;
-  transform: scale(1.1);
-}
-
-.priorityButton.active {
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-.priorityDot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-}
-
-.priorityButton.active .priorityDot {
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-}
-
-/* Scrollbars personalizados */
-.taskList::-webkit-scrollbar,
-.board::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.taskList::-webkit-scrollbar-track,
-.board::-webkit-scrollbar-track {
-  background: #1a1a24;
-}
-
-.taskList::-webkit-scrollbar-thumb,
-.board::-webkit-scrollbar-thumb {
-  background: #333344;
+/* Estilos para informações de horário */
+.taskSchedule {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background-color: rgba(106, 27, 154, 0.1);
   border-radius: 4px;
+  font-size: 0.75rem;
 }
 
-.taskList::-webkit-scrollbar-thumb:hover,
-.board::-webkit-scrollbar-thumb:hover {
-  background: #444455;
+.scheduleItem {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
 }
 
+.scheduleItem:last-child {
+  margin-bottom: 0;
+}
+
+.scheduleLabel {
+  color: #aaa;
+  font-weight: 500;
+}
+
+.scheduleValue {
+  color: #fff;
+}
+
+/* Informações de conclusão */
+.completedInfo {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #4caf50;
+  text-align: center;
+}
+
+/* Estilos para ações da tarefa */
 .taskActions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.deleteButton {
-  background-color: transparent;
+.completeButton {
+  background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1.2rem;
-  line-height: 1;
   cursor: pointer;
   padding: 0;
-  width: 22px;
-  height: 22px;
+  display: flex;
+  align-items: center;
+  color: #aaa;
+  transition: color 0.2s;
+}
+
+.completeButton:hover {
+  color: #4caf50;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.deleteButton:hover {
+  color: #f44336;
+}
+
+/* Estilos para inputs de data e hora no modal */
+.dateTimeGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.dateTimeInput {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateTimeInput label {
+  margin-bottom: 0.3rem;
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.dateTimeInput input {
+  background-color: #252533;
+  border: 1px solid #33334a;
+  border-radius: 4px;
+  padding: 0.6rem;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+}
+
+.dateTimeInput input:focus {
+  outline: none;
+  border-color: #6a1b9a;
+  box-shadow: 0 0 0 2px rgba(106, 27, 154, 0.2);
+}
+
+/* Estilos para botões de prioridade */
+.priorityButtons {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.priorityButton {
+  border: none;
   border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0;
+  margin: 0;
+}
+
+.priorityButton:hover {
+  opacity: 0.9;
+  transform: scale(1.1);
+}
+
+.priorityButton.active {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.priorityDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+/* Modal moderno */
+.modernModal {
+  background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3a 100%);
+  border-radius: 16px;
+  padding: 0;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Responsividade do modal */
+@media (max-width: 768px) {
+  .modernModal {
+    width: 95%;
+    max-width: none;
+    max-height: 95vh;
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modernModal {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: #f5f5f7;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f5f5f7 0%, #a8a8a8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Responsividade do header */
+@media (max-width: 480px) {
+  .modalHeader {
+    padding: 1rem;
+  }
+  
+  .modalHeader h2 {
+    font-size: 1.1rem;
+  }
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
 }
 
-.deleteButton:hover {
-  background-color: rgba(255, 0, 0, 0.2);
-  color: #ff5252;
-}
-
-/* Botão de adicionar coluna */
-.addColumnBtn {
-  min-width: 280px;
-  height: fit-content;
-  background-color: rgba(106, 27, 154, 0.1);
-  border: 2px dashed rgba(106, 27, 154, 0.3);
-  border-radius: 8px;
-  padding: 1rem;
-  color: #6a1b9a;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 0.5rem;
-  text-align: center;
-}
-
-.addColumnBtn:hover {
-  background-color: rgba(106, 27, 154, 0.15);
-  border-color: rgba(106, 27, 154, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.addColumnForm {
-  background-color: #1a1a24;
-  border-radius: 8px;
-  width: 280px;
-  min-width: 280px;
-  padding: 1rem;
-  height: fit-content;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.addColumnInput {
-  width: 100%;
-  background-color: #252533;
-  border: 1px solid #33334a;
-  border-radius: 4px;
-  padding: 0.8rem;
-  color: #f5f5f5;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.addColumnActions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.confirmBtn,
-.cancelBtn {
-  padding: 0.6rem;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-  flex: 1;
-}
-
-.confirmBtn {
-  background-color: #6a1b9a;
-  color: white;
-  transition: all 0.2s;
-}
-
-.confirmBtn:hover {
-  background-color: #4a148c;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.cancelBtn {
-  background-color: transparent;
-  color: #aaa;
-  border: 1px solid #333344;
-  transition: all 0.2s;
-}
-
-.cancelBtn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
+  transform: scale(1.05);
+}
+
+.modernForm {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+}
+
+.inputGroup {
+  margin-bottom: 1.2rem;
+}
+
+/* Responsividade do formulário */
+@media (max-width: 480px) {
+  .modernForm {
+    padding: 1rem;
+  }
+  
+  .inputGroup {
+    margin-bottom: 1rem;
+  }
+}
+
+.modernLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #a8a8a8;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.modernInput,
+.modernTextarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #f5f5f7;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Responsividade dos inputs */
+@media (max-width: 480px) {
+  .modernInput,
+  .modernTextarea {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+}
+
+.modernInput:focus,
+.modernTextarea:focus {
+  outline: none;
+  border-color: #6a1b9a;
+  box-shadow: 0 0 0 3px rgba(106, 27, 154, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modernInput::placeholder,
+.modernTextarea::placeholder {
+  color: #777;
+  font-weight: 400;
+}
+
+.modernTextarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.dateTimeSection {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem 0;
+  color: #f5f5f7;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dateTimeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Responsividade da seção de agendamento */
+@media (max-width: 480px) {
+  .dateTimeSection {
+    margin: 1rem 0;
+    padding: 0.75rem;
+  }
+  
+  .sectionTitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dateTimeGrid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modernCancelButton,
+.modernSubmitButton {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Responsividade das ações */
+@media (max-width: 480px) {
+  .modalActions {
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+  }
+  
+  .modernCancelButton,
+  .modernSubmitButton {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    flex: 1;
+  }
+}
+
+.modernCancelButton {
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.modernCancelButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.modernSubmitButton {
+  background: linear-gradient(135deg, #6a1b9a 0%, #8e24aa 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3);
+}
+
+.modernSubmitButton:hover {
+  background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(106, 27, 154, 0.4);
+}
+
+.modernSubmitButton:active {
+  transform: translateY(0);
 }
