@@ -521,7 +521,9 @@ const Tasks: React.FC = () => {
       setTasks(updatedTasks);
     } catch (error) {
       console.error("Erro ao alterar status da tarefa:", error);
-      alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
+      alert(
+        "Não foi possível alterar o status da tarefa. Por favor, tente novamente."
+      );
     }
   };
 
@@ -531,7 +533,9 @@ const Tasks: React.FC = () => {
         <h1>Quadro de Tarefas</h1>
       </header>
 
-      <div className={styles.board}>        {columns.map((column) => (
+      <div className={styles.board}>
+        {" "}
+        {columns.map((column) => (
           <Column
             key={column.id}
             column={column}
@@ -545,10 +549,12 @@ const Tasks: React.FC = () => {
             onDeleteTask={handleDeleteTask}
             onCompleteTask={handleCompleteTask}
           />
-        ))}        {!isAddingColumn ? (
+        ))}{" "}
+        {!isAddingColumn ? (
           <button className={styles.addColumnButton} onClick={handleAddColumn}>
             + Adicionar coluna
-          </button>        ) : (
+          </button>
+        ) : (
           <div className={styles.newColumn}>
             <input
               type="text"
