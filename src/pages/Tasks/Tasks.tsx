@@ -141,48 +141,48 @@ const Tasks: React.FC = () => {
   }, [columns]);
 
   // SUBSTITUA TODOS OS useEffect relacionados a duplicatas por este:
-useEffect(() => {
-  // Skip quando as colunas estiverem vazias (inicialização)
-  if (columns.length === 0 || Object.keys(tasks).length === 0) {
-    return;
-  }
+  useEffect(() => {
+    // Skip quando as colunas estiverem vazias (inicialização)
+    if (columns.length === 0 || Object.keys(tasks).length === 0) {
+      return;
+    }
 
-  // Criar um snapshot atual para comparação posterior
-  const currentSnapshot = JSON.stringify(columns.map(c => c.taskIds));
+    // Criar um snapshot atual para comparação posterior
+    const currentSnapshot = JSON.stringify(columns.map((c) => c.taskIds));
 
-  // Verificar e remover duplicatas em um único passo
-  const seen = new Set<string>();
-  let shouldUpdate = false;
-  
-  const updatedColumns = columns.map(column => {
-    const uniqueTaskIds = column.taskIds.filter(taskId => {
-      if (seen.has(taskId)) {
-        shouldUpdate = true; // Marcar que uma atualização é necessária
-        return false; // Remover duplicata
+    // Verificar e remover duplicatas em um único passo
+    const seen = new Set<string>();
+    let shouldUpdate = false;
+
+    const updatedColumns = columns.map((column) => {
+      const uniqueTaskIds = column.taskIds.filter((taskId) => {
+        if (seen.has(taskId)) {
+          shouldUpdate = true; // Marcar que uma atualização é necessária
+          return false; // Remover duplicata
+        }
+        seen.add(taskId);
+        return true;
+      });
+
+      // Verificar se esta coluna foi modificada
+      if (uniqueTaskIds.length !== column.taskIds.length) {
+        shouldUpdate = true;
+        return { ...column, taskIds: uniqueTaskIds };
       }
-      seen.add(taskId);
-      return true;
+
+      return column;
     });
-    
-    // Verificar se esta coluna foi modificada
-    if (uniqueTaskIds.length !== column.taskIds.length) {
-      shouldUpdate = true;
-      return { ...column, taskIds: uniqueTaskIds };
+
+    // Só atualizar estado se necessário e se diferente do estado atual
+    if (shouldUpdate) {
+      const newSnapshot = JSON.stringify(updatedColumns.map((c) => c.taskIds));
+
+      if (currentSnapshot !== newSnapshot) {
+        console.warn("Removendo tarefas duplicadas");
+        setColumns(updatedColumns);
+      }
     }
-    
-    return column;
-  });
-  
-  // Só atualizar estado se necessário e se diferente do estado atual
-  if (shouldUpdate) {
-    const newSnapshot = JSON.stringify(updatedColumns.map(c => c.taskIds));
-    
-    if (currentSnapshot !== newSnapshot) {
-      console.warn("Removendo tarefas duplicadas");
-      setColumns(updatedColumns);
-    }
-  }
-}, [columns, tasks]); // Dependências controladas
+  }, [columns, tasks]); // Dependências controladas
 
   // Logging para debugging
   useEffect(() => {
@@ -278,7 +278,6 @@ useEffect(() => {
     setActiveColumnId(columnId);
     setShowTaskForm(true);
   };
-
   // Manipulador para criar tarefa
   const handleCreateTask = async (
     columnId: string,
@@ -286,6 +285,10 @@ useEffect(() => {
       title: string;
       priority: "low" | "medium" | "high";
       description?: string;
+      startDate?: string;
+      endDate?: string;
+      startTime?: string;
+      endTime?: string;
     }
   ) => {
     try {
@@ -304,6 +307,10 @@ useEffect(() => {
         title: taskData.title,
         description: taskData.description || "",
         priority: taskData.priority,
+        startDate: taskData.startDate,
+        endDate: taskData.endDate,
+        startTime: taskData.startTime,
+        endTime: taskData.endTime,
         estimatedPomodoros: 1,
       });
 
@@ -458,14 +465,73 @@ useEffect(() => {
     }
   };
 
+  // Manipulador para completar/descompletar tarefa
+  const handleCompleteTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevenir propagação
+
+    try {
+      const task = tasks[taskId];
+      if (!task) return;
+
+      let updatedTask;
+      if (task.status === "completed") {
+        // Desmarcar como concluída
+        updatedTask = await taskService.uncompleteTask(taskId);
+      } else {
+        // Marcar como concluída
+        updatedTask = await taskService.completeTask(taskId);
+      }
+
+      // Determinar nova coluna baseada no status
+      let newColumnId = task.columnId;
+      if (updatedTask.status === "completed") {
+        newColumnId = "col-3"; // Coluna "Concluído"
+      } else if (updatedTask.status === "pending") {
+        newColumnId = "col-1"; // Coluna "A fazer"
+      }
+
+      // Atualizar estado local
+      const updatedColumns = columns.map((column) => {
+        // Remover tarefa da coluna atual
+        const filteredTaskIds = column.taskIds.filter((id) => id !== taskId);
+
+        // Adicionar à nova coluna se necessário
+        if (column.id === newColumnId && !filteredTaskIds.includes(taskId)) {
+          return {
+            ...column,
+            taskIds: [...filteredTaskIds, taskId],
+          };
+        }
+
+        return {
+          ...column,
+          taskIds: filteredTaskIds,
+        };
+      });
+
+      const updatedTasks = {
+        ...tasks,
+        [taskId]: {
+          ...updatedTask,
+          columnId: newColumnId,
+        },
+      };
+
+      setColumns(updatedColumns);
+      setTasks(updatedTasks);
+    } catch (error) {
+      console.error("Erro ao alterar status da tarefa:", error);
+      alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
+    }
+  };
+
   return (
     <div className={styles.tasksPage}>
       <header className={styles.header}>
         <h1>Quadro de Tarefas</h1>
       </header>
 
-      <div className={styles.board}>
-        {columns.map((column) => (
+      <div className={styles.board}>        {columns.map((column) => (
           <Column
             key={column.id}
             column={column}
@@ -477,32 +543,30 @@ useEffect(() => {
             onRenameColumn={handleRenameColumn}
             onDeleteColumn={handleDeleteColumn}
             onDeleteTask={handleDeleteTask}
+            onCompleteTask={handleCompleteTask}
           />
-        ))}
-
-        {!isAddingColumn ? (
-          <button className={styles.addColumnBtn} onClick={handleAddColumn}>
+        ))}        {!isAddingColumn ? (
+          <button className={styles.addColumnButton} onClick={handleAddColumn}>
             + Adicionar coluna
-          </button>
-        ) : (
-          <div className={styles.addColumnForm}>
+          </button>        ) : (
+          <div className={styles.newColumn}>
             <input
               type="text"
               placeholder="Título da coluna"
               value={newColumnTitle}
               onChange={(e) => setNewColumnTitle(e.target.value)}
-              className={styles.addColumnInput}
+              className={styles.newColumnInput}
             />
-            <div className={styles.addColumnActions}>
+            <div className={styles.newColumnActions}>
               <button
                 onClick={handleConfirmAddColumn}
-                className={styles.confirmBtn}
+                className={styles.confirmButton}
               >
                 Confirmar
               </button>
               <button
                 onClick={handleCancelAddColumn}
-                className={styles.cancelBtn}
+                className={styles.cancelButton}
               >
                 Cancelar
               </button>
