@@ -149,6 +149,18 @@ const Navbar: React.FC = () => {
                 Quadro de Tarefas
               </NavLink>
             </li>
+
+            <li>
+              <NavLink
+                to="/lumi"
+                className={({ isActive }) =>
+                  isActive ? styles.activeLink : ""
+                }
+                onClick={closeMenu}
+              >
+                Lumi IA
+              </NavLink>
+            </li>
           </ul>
 
           <div className={styles.userSection}>
