@@ -43,7 +43,7 @@ input:focus {
 .app .content {
   position: relative;
   min-height: 100vh;
-  padding-top: 80px; /* Espaço para a navbar */
+  padding-top: 0px; /* Espaço para a navbar */
 }
 
 /* Para páginas que precisam ocupar toda a tela (como Lumi) */
