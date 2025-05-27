@@ -6,6 +6,8 @@ import pomodoroService, {
   CreatePomodoroDTO,
 } from "../../services/pomodoroService";
 import { useTaskContext } from "../../hooks/TaskProvider";
+import PlantTimer from "../../components/PlantTimer/PlantTimer";
+import { Timer, Sprout, Play, Pause, RotateCcw } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   const { tasks, selectedTaskId, refreshTasks } = useTaskContext();
@@ -17,6 +19,7 @@ const Dashboard: React.FC = () => {
     "pomodoro" | "shortBreak" | "longBreak"
   >("pomodoro");
   const [customTime, setCustomTime] = useState<number>(25);
+  const [viewMode, setViewMode] = useState<"timer" | "plant">("timer");
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -52,9 +55,28 @@ const Dashboard: React.FC = () => {
       totalTime = 15 * 60;
     }
 
-    const progress = time / totalTime;
-    const circumference = 2 * Math.PI * 45;
+    const progress = (totalTime - time) / totalTime;
+    return Math.max(0, Math.min(1, progress));
+  };
+
+  const getStrokeDashoffset = (): number => {
+    const circumference = 2 * Math.PI * 100; 
+    const progress = calculateProgress();
     return circumference * (1 - progress);
+  };
+
+  const resetTimer = () => {
+    setIsRunning(false);
+    if (timerMode === "pomodoro") {
+      setTime(customTime * 60);
+    } else if (timerMode === "shortBreak") {
+      setTime(5 * 60);
+    } else {
+      setTime(15 * 60);
+    }
+    if (activePomodoro) {
+      setActivePomodoro(null);
+    }
   };
 
   const handleStartTimer = async () => {
@@ -158,87 +180,175 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className={styles.dashboardContainer}>
+      <div className={styles.backgroundGradient}>
+        <div className={styles.backgroundBlob1}></div>
+        <div className={styles.backgroundBlob2}></div>
+      </div>
+
       <main className={styles.mainContent}>
         <div className={`${styles.timerSection} ${styles.fadeIn}`}>
-          <div className={styles.timerModes}>
-            <button
-              className={`${styles.modeButton} ${
-                timerMode === "pomodoro" ? styles.activeMode : ""
-              }`}
-              onClick={() => handleSelectTimerMode("pomodoro")}
-            >
-              Pomodoro
-            </button>
-            <button
-              className={`${styles.modeButton} ${
-                timerMode === "shortBreak" ? styles.activeMode : ""
-              }`}
-              onClick={() => handleSelectTimerMode("shortBreak")}
-            >
-              Pausa Curta
-            </button>
-            <button
-              className={`${styles.modeButton} ${
-                timerMode === "longBreak" ? styles.activeMode : ""
-              }`}
-              onClick={() => handleSelectTimerMode("longBreak")}
-            >
-              Pausa Longa
-            </button>
-          </div>
-
-          <div className={styles.timerCircleContainer}>
-            <div className={styles.timerDisplay}>
-              <span className={styles.timeText}>{formatTime(time)}</span>
-              {selectedTaskId && (
-                <span className={styles.taskName}>
-                  {tasks.find((t) => t.id === selectedTaskId)?.title}
-                </span>
-              )}
+          {/* Header com controles de modo */}
+          <div className={styles.header}>
+            <div className={styles.timerModes}>
+              <button
+                className={`${styles.modeButton} ${
+                  timerMode === "pomodoro" ? styles.activeMode : ""
+                }`}
+                onClick={() => handleSelectTimerMode("pomodoro")}
+              >
+                <div className={styles.modeIndicator}></div>
+                Focus
+              </button>
+              <button
+                className={`${styles.modeButton} ${
+                  timerMode === "shortBreak" ? styles.activeMode : ""
+                }`}
+                onClick={() => handleSelectTimerMode("shortBreak")}
+              >
+                <div className={styles.modeIndicator}></div>
+                Short Break
+              </button>
+              <button
+                className={`${styles.modeButton} ${
+                  timerMode === "longBreak" ? styles.activeMode : ""
+                }`}
+                onClick={() => handleSelectTimerMode("longBreak")}
+              >
+                <div className={styles.modeIndicator}></div>
+                Long Break
+              </button>
             </div>
-            <svg className={styles.timerCircle} viewBox="0 0 100 100">
-              <circle
-                className={styles.timerCircleBackground}
-                cx="50"
-                cy="50"
-                r="45"
-              />
-              <circle
-                className={styles.timerCircleProgress}
-                cx="50"
-                cy="50"
-                r="45"
-                style={{
-                  strokeDashoffset: calculateProgress(),
-                }}
-              />
-            </svg>
+
+            {/* Toggle entre Timer e Planta */}
+            <div className={styles.viewToggle}>
+              <button
+                className={`${styles.toggleButton} ${
+                  viewMode === "timer" ? styles.active : ""
+                }`}
+                onClick={() => setViewMode("timer")}
+              >
+                <Timer size={16} />
+              </button>
+              <button
+                className={`${styles.toggleButton} ${
+                  viewMode === "plant" ? styles.active : ""
+                }`}
+                onClick={() => setViewMode("plant")}
+              >
+                <Sprout size={16} />
+              </button>
+            </div>
           </div>
 
+          {/* Timer Circle */}
+          <div className={styles.timerContainer}>
+            <div className={styles.timerCircle}>
+              <svg className={styles.progressRing} viewBox="0 0 200 200">
+                <circle
+                  className={styles.progressBackground}
+                  cx="100"
+                  cy="100"
+                  r="100"
+                />
+                <circle
+                  className={`${styles.progressBar} ${
+                    isRunning ? styles.animated : ""
+                  }`}
+                  cx="100"
+                  cy="100"
+                  r="100"
+                  style={{
+                    strokeDashoffset: getStrokeDashoffset(),
+                  }}
+                />
+              </svg>
+
+              <div className={styles.timerContent}>
+                {viewMode === "timer" ? (
+                  <div className={styles.timerDisplay}>
+                    <div className={styles.timeText}>{formatTime(time)}</div>
+                    {selectedTaskId && (
+                      <div className={styles.taskName}>
+                        {tasks.find((t) => t.id === selectedTaskId)?.title}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <PlantTimer
+                    progress={calculateProgress()}
+                    isActive={isRunning}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Custom time control */}
           {timerMode === "pomodoro" && !isRunning && (
             <div className={styles.customTimeControl}>
-              <label htmlFor="customTime">Tempo (min): </label>
-              <input
-                id="customTime"
-                type="number"
-                min="1"
-                max="60"
-                value={customTime}
-                onChange={handleCustomTimeChange}
-                className={styles.customTimeInput}
-              />
+              <label htmlFor="customTime" className={styles.timeLabel}>
+                Duration (minutes)
+              </label>
+              <div className={styles.timeInputWrapper}>
+                <input
+                  id="customTime"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={customTime}
+                  onChange={handleCustomTimeChange}
+                  className={styles.customTimeInput}
+                />
+              </div>
             </div>
           )}
 
-          <div className={styles.timerControls}>
+          {/* Controls */}
+          <div className={styles.controls}>
+            <button
+              className={styles.resetButton}
+              onClick={resetTimer}
+              disabled={
+                !isRunning &&
+                time ===
+                  (timerMode === "pomodoro"
+                    ? customTime * 60
+                    : timerMode === "shortBreak"
+                    ? 5 * 60
+                    : 15 * 60)
+              }
+            >
+              <RotateCcw size={20} />
+            </button>
+
             {!isRunning ? (
-              <button className={styles.startButton} onClick={handleStartTimer}>
-                Iniciar
+              <button className={styles.playButton} onClick={handleStartTimer}>
+                <Play size={24} />
+                Start
               </button>
             ) : (
               <button className={styles.pauseButton} onClick={handlePauseTimer}>
-                Pausar
+                <Pause size={24} />
+                Pause
               </button>
+            )}
+
+            <div className={styles.spacer}></div>
+          </div>
+
+          {/* Session info */}
+          <div className={styles.sessionInfo}>
+            {selectedTaskId ? (
+              <div className={styles.selectedTask}>
+                <span>Working on:</span>
+                <strong>
+                  {tasks.find((t) => t.id === selectedTaskId)?.title}
+                </strong>
+              </div>
+            ) : (
+              <div className={styles.noTask}>
+                <span>No task selected</span>
+              </div>
             )}
           </div>
         </div>
