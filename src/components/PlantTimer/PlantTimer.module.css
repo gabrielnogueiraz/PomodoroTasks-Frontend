@@ -1,0 +1,330 @@
+.plantContainer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.plantContainer.active {
+  animation: gentle-sway 4s ease-in-out infinite;
+}
+
+@keyframes gentle-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(1deg); }
+  75% { transform: rotate(-1deg); }
+}
+
+/* Pot styles - Dark theme */
+.pot {
+  position: relative;
+  width: 60px;
+  height: 40px;
+  background: linear-gradient(145deg, #2d1b1b, #3e2723);
+  border-radius: 0 0 30px 30px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0,0,0,0.5),
+    0 4px 12px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.potRim {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  height: 6px;
+  background: linear-gradient(145deg, #3e2723, #2d1b1b);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.soil {
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  right: 8px;
+  height: 15px;
+  background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+  border-radius: 20px;
+}
+
+/* Plant base styles */
+.plant {
+  position: absolute;
+  bottom: 35px;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Seed stage */
+.seed {
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  border-radius: 50%;
+  animation: seed-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+}
+
+@keyframes seed-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+  }
+}
+
+/* Stem */
+.stem {
+  width: 3px;
+  height: 25px;
+  background: linear-gradient(to top, #2e7d32, #4caf50);
+  border-radius: 2px;
+  position: relative;
+  animation: grow-up 0.8s ease-out;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+}
+
+@keyframes grow-up {
+  from { 
+    height: 0;
+    opacity: 0;
+  }
+  to { 
+    height: 25px;
+    opacity: 1;
+  }
+}
+
+/* Leaves - Dark theme with glowing effect */
+.firstLeaf, .secondLeaf, .thirdLeaf, .fourthLeaf, .fifthLeaf {
+  position: absolute;
+  background: linear-gradient(45deg, #2e7d32, #4caf50);
+  border-radius: 50% 10px;
+  animation: leaf-grow 0.6s ease-out;
+  box-shadow: 
+    0 0 8px rgba(76, 175, 80, 0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.firstLeaf {
+  width: 12px;
+  height: 8px;
+  top: 15px;
+  left: -8px;
+  transform: rotate(-30deg);
+  animation-delay: 0.2s;
+}
+
+.secondLeaf {
+  width: 10px;
+  height: 7px;
+  top: 12px;
+  right: -7px;
+  transform: rotate(45deg);
+  animation-delay: 0.4s;
+}
+
+.thirdLeaf {
+  width: 14px;
+  height: 9px;
+  top: 8px;
+  left: -10px;
+  transform: rotate(-45deg);
+  animation-delay: 0.6s;
+}
+
+.fourthLeaf {
+  width: 11px;
+  height: 8px;
+  top: 5px;
+  right: -8px;
+  transform: rotate(60deg);
+  animation-delay: 0.8s;
+}
+
+.fifthLeaf {
+  width: 13px;
+  height: 9px;
+  top: 2px;
+  left: -9px;
+  transform: rotate(-60deg);
+  animation-delay: 1s;
+}
+
+@keyframes leaf-grow {
+  from {
+    transform: scale(0) rotate(var(--rotation, 0deg));
+    opacity: 0;
+    box-shadow: 0 0 0 rgba(76, 175, 80, 0);
+  }
+  50% {
+    transform: scale(1.2) rotate(var(--rotation, 0deg));
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.4);
+  }
+  to {
+    transform: scale(1) rotate(var(--rotation, 0deg));
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
+  }
+}
+
+/* Flower - Dark theme */
+.flower {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #e91e63, #ad1457);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: flower-bloom 1s ease-out;
+  box-shadow: 
+    0 0 12px rgba(233, 30, 99, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  border: 1px solid rgba(233, 30, 99, 0.3);
+}
+
+.flowerCenter {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #ffc107, #ff8f00);
+  border-radius: 50%;
+  animation: flower-bloom 1s ease-out 0.2s both;
+  box-shadow: 
+    0 0 8px rgba(255, 193, 7, 0.6),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+@keyframes flower-bloom {
+  from {
+    transform: translateX(-50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.3);
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Particles animation - Dark theme */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: linear-gradient(135deg, #4caf50, #81c784);
+  border-radius: 50%;
+  animation: particle-float 3s ease-in-out infinite;
+  opacity: 0;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+}
+
+.particle:nth-child(1) {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.particle:nth-child(2) {
+  left: 50%;
+  animation-delay: 1s;
+}
+
+.particle:nth-child(3) {
+  left: 80%;
+  animation-delay: 2s;
+}
+
+@keyframes particle-float {
+  0% {
+    bottom: 0;
+    opacity: 0;
+    transform: translateY(0) scale(0);
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-40px) scale(0.8);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+  }
+  100% {
+    bottom: 60px;
+    opacity: 0;
+    transform: translateY(-50px) scale(0);
+    box-shadow: 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+/* Stage-specific animations */
+.sprout, .small, .medium, .full {
+  animation: stage-transition 0.8s ease-out;
+}
+
+@keyframes stage-transition {
+  0% {
+    transform: translateX(-50%) scale(0.8);
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(76, 175, 80, 0.4));
+  }
+  50% {
+    transform: translateX(-50%) scale(1.1);
+    filter: brightness(1.4) drop-shadow(0 0 15px rgba(76, 175, 80, 0.6));
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    filter: brightness(1) drop-shadow(0 0 8px rgba(76, 175, 80, 0.3));
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .plantContainer {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .pot {
+    width: 50px;
+    height: 35px;
+  }
+  
+  .stem {
+    height: 20px;
+  }
+  
+  .firstLeaf, .secondLeaf, .thirdLeaf, .fourthLeaf, .fifthLeaf {
+    width: 10px;
+    height: 7px;
+  }
+}
