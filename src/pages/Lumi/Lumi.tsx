@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import lumiService, { ChatMessage } from "../../services/lumiService";
 import { Send, Sparkles, Zap, MessageCircle, Lightbulb } from "lucide-react";
+import MessageRenderer from "../../components/MessageRenderer/MessageRenderer";
 import styles from "./Lumi.module.css";
 
 const Lumi: React.FC = () => {
@@ -140,14 +141,22 @@ const Lumi: React.FC = () => {
                 <div className={styles.avatar}>
                   <Sparkles className={styles.avatarIcon} />
                 </div>
-                <div className={`${styles.statusIndicator} ${isConnected ? styles.online : styles.offline}`}></div>
+                <div
+                  className={`${styles.statusIndicator} ${
+                    isConnected ? styles.online : styles.offline
+                  }`}
+                ></div>
               </div>
               <div className={styles.lumiDetails}>
                 <h1 className={styles.title}>Lumi</h1>
                 <p className={styles.subtitle}>Sua assistente pessoal de IA</p>
               </div>
             </div>
-            <div className={`${styles.connectionStatus} ${isConnected ? styles.connectedStatus : styles.disconnectedStatus}`}>
+            <div
+              className={`${styles.connectionStatus} ${
+                isConnected ? styles.connectedStatus : styles.disconnectedStatus
+              }`}
+            >
               {isConnected ? "Online" : "Offline"}
             </div>
           </div>
@@ -159,9 +168,15 @@ const Lumi: React.FC = () => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`${styles.messageRow} ${message.isUser ? styles.userMessage : styles.lumiMessage}`}
+                className={`${styles.messageRow} ${
+                  message.isUser ? styles.userMessage : styles.lumiMessage
+                }`}
               >
-                <div className={`${styles.messageAvatar} ${message.isUser ? styles.userAvatar : styles.lumiAvatar}`}>
+                <div
+                  className={`${styles.messageAvatar} ${
+                    message.isUser ? styles.userAvatar : styles.lumiAvatar
+                  }`}
+                >
                   {message.isUser ? (
                     <div className={styles.userAvatarIcon}></div>
                   ) : (
@@ -170,7 +185,11 @@ const Lumi: React.FC = () => {
                 </div>
 
                 <div className={styles.messageContent}>
-                  <div className={`${styles.messageBubble} ${message.isUser ? styles.userBubble : styles.lumiBubble} ${message.isTyping ? styles.typingBubble : ''}`}>
+                  <div
+                    className={`${styles.messageBubble} ${
+                      message.isUser ? styles.userBubble : styles.lumiBubble
+                    } ${message.isTyping ? styles.typingBubble : ""}`}
+                  >
                     {message.isTyping ? (
                       <div className={styles.typingIndicator}>
                         <div className={styles.typingDot}></div>
@@ -178,10 +197,19 @@ const Lumi: React.FC = () => {
                         <div className={styles.typingDot}></div>
                       </div>
                     ) : (
-                      <p className={styles.messageText}>{message.message}</p>
+                      <MessageRenderer
+                        content={message.message}
+                        isUser={message.isUser}
+                      />
                     )}
                   </div>
-                  <p className={`${styles.timestamp} ${message.isUser ? styles.userTimestamp : styles.lumiTimestamp}`}>
+                  <p
+                    className={`${styles.timestamp} ${
+                      message.isUser
+                        ? styles.userTimestamp
+                        : styles.lumiTimestamp
+                    }`}
+                  >
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
