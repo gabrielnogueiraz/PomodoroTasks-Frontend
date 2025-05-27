@@ -1,0 +1,265 @@
+.messageContent {
+  width: 100%;
+  line-height: 1.6;
+}
+
+.userMessage {
+  margin: 0;
+  color: white;
+  line-height: 1.5;
+}
+
+/* Títulos */
+.heading1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 1rem 0 0.5rem 0;
+  border-bottom: 2px solid rgba(156, 39, 176, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.heading2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.heading3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0.8rem 0 0.4rem 0;
+}
+
+.heading4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0.6rem 0 0.3rem 0;
+}
+
+/* Parágrafos */
+.paragraph {
+  margin: 0.5rem 0;
+  color: #f1f5f9;
+  line-height: 1.6;
+}
+
+/* Código inline */
+.inlineCode {
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-family: "Fira Code", "Monaco", "Consolas", monospace;
+  font-size: 0.9em;
+  color: #c084fc;
+}
+
+/* Blocos de código */
+.codeBlock {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(156, 39, 176, 0.2);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.codeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.9);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(156, 39, 176, 0.2);
+}
+
+.language {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a855f7;
+  font-family: "Fira Code", "Monaco", "Consolas", monospace;
+}
+
+.copyButton {
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: #c084fc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copyButton:hover {
+  background: rgba(124, 58, 237, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Listas */
+.unorderedList,
+.orderedList {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.unorderedList {
+  list-style-type: none;
+}
+
+.orderedList {
+  list-style-type: decimal;
+  color: #a855f7;
+}
+
+.listItem {
+  margin: 0.3rem 0;
+  color: #f1f5f9;
+  position: relative;
+}
+
+.unorderedList .listItem::before {
+  content: "•";
+  color: #a855f7;
+  font-weight: bold;
+  position: absolute;
+  left: -1rem;
+}
+
+/* Links */
+.link {
+  color: #c084fc;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(192, 132, 252, 0.3);
+  transition: all 0.2s ease;
+}
+
+.link:hover {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
+}
+
+/* Formatação de texto */
+.bold {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.italic {
+  font-style: italic;
+  color: #e2e8f0;
+}
+
+/* Blockquotes */
+.blockquote {
+  border-left: 4px solid #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: #e2e8f0;
+}
+
+/* Tabelas */
+.tableWrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: 1px solid rgba(156, 39, 176, 0.2);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.tableHeader {
+  background: rgba(124, 58, 237, 0.2);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #c084fc;
+  border-bottom: 1px solid rgba(156, 39, 176, 0.3);
+}
+
+.tableCell {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(156, 39, 176, 0.1);
+  color: #f1f5f9;
+}
+
+.table tr:last-child .tableCell {
+  border-bottom: none;
+}
+
+.table tr:hover {
+  background: rgba(124, 58, 237, 0.05);
+}
+
+/* Divisores */
+.divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(156, 39, 176, 0.3),
+    transparent
+  );
+  margin: 1.5rem 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .heading1 {
+    font-size: 1.3rem;
+  }
+
+  .heading2 {
+    font-size: 1.2rem;
+  }
+
+  .codeHeader {
+    padding: 0.4rem 0.8rem;
+  }
+
+  .language {
+    font-size: 0.7rem;
+  }
+
+  .copyButton {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .tableWrapper {
+    font-size: 0.9rem;
+  }
+
+  .tableHeader,
+  .tableCell {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .unorderedList,
+  .orderedList {
+    padding-left: 1rem;
+  }
+
+  .blockquote {
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+  }
+
+  .tableHeader,
+  .tableCell {
+    padding: 0.4rem;
+  }
+}
