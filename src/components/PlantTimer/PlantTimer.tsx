@@ -4,9 +4,10 @@ import styles from "./PlantTimer.module.css";
 interface PlantTimerProps {
   progress: number; // 0 to 1
   isActive: boolean;
+  priority?: "low" | "medium" | "high"; // Adiciona prioridade para colorir a flor
 }
 
-const PlantTimer: React.FC<PlantTimerProps> = ({ progress, isActive }) => {
+const PlantTimer: React.FC<PlantTimerProps> = ({ progress, isActive, priority = "low" }) => {
   const getPlantStage = (progress: number) => {
     if (progress <= 0.2) return "seed";
     if (progress <= 0.4) return "sprout";
@@ -15,7 +16,20 @@ const PlantTimer: React.FC<PlantTimerProps> = ({ progress, isActive }) => {
     return "full";
   };
 
+  const getFlowerColorClass = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return styles.redFlower;
+      case "medium":
+        return styles.orangeFlower;
+      case "low":
+      default:
+        return styles.greenFlower;
+    }
+  };
+
   const plantStage = getPlantStage(progress);
+  const flowerColorClass = getFlowerColorClass(priority);
 
   return (
     <div
@@ -57,12 +71,10 @@ const PlantTimer: React.FC<PlantTimerProps> = ({ progress, isActive }) => {
             <div className={styles.fourthLeaf}></div>
             <div className={styles.fifthLeaf}></div>
           </>
-        )}
-
-        {/* Full grown plant */}
+        )}        {/* Full grown plant */}
         {plantStage === "full" && (
           <>
-            <div className={styles.flower}></div>
+            <div className={`${styles.flower} ${flowerColorClass}`}></div>
             <div className={styles.flowerCenter}></div>
           </>
         )}
