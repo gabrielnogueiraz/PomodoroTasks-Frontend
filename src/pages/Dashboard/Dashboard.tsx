@@ -5,21 +5,28 @@ import pomodoroService, {
   Pomodoro,
   CreatePomodoroDTO,
 } from "../../services/pomodoroService";
+import { priorityToFlowerType } from "../../services/flowerService";
 import { useTaskContext } from "../../hooks/TaskProvider";
 import PlantTimer from "../../components/PlantTimer/PlantTimer";
-import { Timer, Sprout, Play, Pause, RotateCcw } from "lucide-react";
+import GardenModal from "../../components/GardenModal/GardenModal";
+import FlowerCreationAnimation from "../../components/FlowerCreationAnimation/FlowerCreationAnimation";
+import { Timer, Sprout, Play, Pause, RotateCcw, Flower } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   const { tasks, selectedTaskId, refreshTasks } = useTaskContext();
 
   const [activePomodoro, setActivePomodoro] = useState<Pomodoro | null>(null);
   const [time, setTime] = useState<number>(25 * 60); // 25 minutos em segundos
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [timerMode, setTimerMode] = useState<
+  const [isRunning, setIsRunning] = useState<boolean>(false);  const [timerMode, setTimerMode] = useState<
     "pomodoro" | "shortBreak" | "longBreak"
-  >("pomodoro");
-  const [customTime, setCustomTime] = useState<number>(25);
+  >("pomodoro");  const [customTime, setCustomTime] = useState<number>(25);
   const [viewMode, setViewMode] = useState<"timer" | "plant">("timer");
+  const [isGardenModalOpen, setIsGardenModalOpen] = useState<boolean>(false);
+  const [flowerAnimation, setFlowerAnimation] = useState<{
+    show: boolean;
+    type: "green" | "orange" | "red" | "purple";
+    isRare: boolean;
+  }>({ show: false, type: "green", isRare: false });
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -115,18 +122,27 @@ const Dashboard: React.FC = () => {
     } else {
       setIsRunning(false);
     }
-  };
-
-  const handleTimerComplete = async () => {
-    if (activePomodoro) {
+  };  const handleTimerComplete = async () => {
+    if (activePomodoro && timerMode === "pomodoro") {
       try {
+        // Completar pomodoro no backend
         await pomodoroService.completePomodoro(activePomodoro.id);
 
+        // Atualizar contadores da tarefa se houver uma selecionada
         if (selectedTaskId) {
           const task = tasks.find((t) => t.id === selectedTaskId);
           if (task) {
+            // Atualizar contadores da tarefa
             await taskService.updateTask(selectedTaskId, {
               completedPomodoros: task.completedPomodoros + 1,
+            });
+
+            // Mostrar animação de flor baseada na prioridade
+            const flowerType = priorityToFlowerType(task.priority);
+            setFlowerAnimation({
+              show: true,
+              type: flowerType.toLowerCase() as "green" | "orange" | "red" | "purple",
+              isRare: false, // Por enquanto, sem lógica de flores raras
             });
 
             // Atualizar a lista de tarefas após completar um pomodoro
@@ -136,16 +152,16 @@ const Dashboard: React.FC = () => {
 
         setActivePomodoro(null);
 
-        if (timerMode === "pomodoro") {
-          setTimerMode("shortBreak");
-          setTime(5 * 60);
-        } else if (timerMode === "shortBreak") {
-          setTimerMode("pomodoro");
-          setTime(customTime * 60);
-        }
+        // Transição para break
+        setTimerMode("shortBreak");
+        setTime(5 * 60);
+        
       } catch (error) {
         console.error("Erro ao completar pomodoro:", error);
       }
+    } else if (timerMode === "shortBreak") {
+      setTimerMode("pomodoro");
+      setTime(customTime * 60);
     }
 
     setIsRunning(false);
@@ -217,25 +233,34 @@ const Dashboard: React.FC = () => {
                 <div className={styles.modeIndicator}></div>
                 Long Break
               </button>
-            </div>
-
-            {/* Toggle entre Timer e Planta */}
-            <div className={styles.viewToggle}>
+            </div>            {/* Toggle entre Timer e Planta */}
+            <div className={styles.controlsSection}>
+              <div className={styles.viewToggle}>
+                <button
+                  className={`${styles.toggleButton} ${
+                    viewMode === "timer" ? styles.active : ""
+                  }`}
+                  onClick={() => setViewMode("timer")}
+                >
+                  <Timer size={16} />
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${
+                    viewMode === "plant" ? styles.active : ""
+                  }`}
+                  onClick={() => setViewMode("plant")}
+                >
+                  <Sprout size={16} />
+                </button>
+              </div>
+              
+              {/* Botão do Jardim */}
               <button
-                className={`${styles.toggleButton} ${
-                  viewMode === "timer" ? styles.active : ""
-                }`}
-                onClick={() => setViewMode("timer")}
+                className={styles.gardenButton}
+                onClick={() => setIsGardenModalOpen(true)}
+                title="Ver meu jardim virtual"
               >
-                <Timer size={16} />
-              </button>
-              <button
-                className={`${styles.toggleButton} ${
-                  viewMode === "plant" ? styles.active : ""
-                }`}
-                onClick={() => setViewMode("plant")}
-              >
-                <Sprout size={16} />
+                <Flower size={20} />
               </button>
             </div>
           </div>
@@ -272,11 +297,15 @@ const Dashboard: React.FC = () => {
                         {tasks.find((t) => t.id === selectedTaskId)?.title}
                       </div>
                     )}
-                  </div>
-                ) : (
+                  </div>                ) : (
                   <PlantTimer
                     progress={calculateProgress()}
                     isActive={isRunning}
+                    priority={
+                      selectedTaskId
+                        ? tasks.find((t) => t.id === selectedTaskId)?.priority?.toLowerCase() as "low" | "medium" | "high"
+                        : "low"
+                    }
                   />
                 )}
               </div>
@@ -334,9 +363,7 @@ const Dashboard: React.FC = () => {
             )}
 
             <div className={styles.spacer}></div>
-          </div>
-
-          {/* Session info */}
+          </div>          {/* Session info */}
           <div className={styles.sessionInfo}>
             {selectedTaskId ? (
               <div className={styles.selectedTask}>
@@ -351,8 +378,21 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      </main>
+        </div>      </main>
+
+      {/* Animação de Criação de Flor */}
+      <FlowerCreationAnimation
+        isVisible={flowerAnimation.show}
+        flowerType={flowerAnimation.type}
+        isRare={flowerAnimation.isRare}
+        onComplete={() => setFlowerAnimation({ show: false, type: "green", isRare: false })}
+      />
+
+      {/* Garden Modal */}
+      <GardenModal
+        isOpen={isGardenModalOpen}
+        onClose={() => setIsGardenModalOpen(false)}
+      />
     </div>
   );
 };
