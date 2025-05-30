@@ -1,0 +1,384 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #333;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #333;
+}
+
+.titleSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerIcon {
+  color: #10b981;
+  width: 28px;
+  height: 28px;
+}
+
+.titleSection h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: #374151;
+  color: #fff;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #374151;
+  border-top: 3px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #9ca3af;
+  margin: 0;
+  font-size: 16px;
+}
+
+.statsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid #333;
+}
+
+.statCard {
+  background: #262626;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #404040;
+}
+
+.statIcon {
+  width: 24px;
+  height: 24px;
+  color: #10b981;
+}
+
+.statCard div {
+  display: flex;
+  flex-direction: column;
+}
+
+.statNumber {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.consecutiveIndicator {
+  color: #f59e0b;
+}
+
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  padding: 0 24px;
+  gap: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #fff;
+}
+
+.tab.active {
+  color: #fff;
+  border-bottom-color: #10b981;
+}
+
+.greenTab.active {
+  border-bottom-color: #10b981;
+}
+
+.orangeTab.active {
+  border-bottom-color: #f97316;
+}
+
+.redTab.active {
+  border-bottom-color: #ef4444;
+}
+
+.purpleTab.active {
+  border-bottom-color: #8b5cf6;
+}
+
+.flowersGrid {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.emptyState p {
+  color: #9ca3af;
+  font-size: 18px;
+  margin: 0 0 8px 0;
+}
+
+.emptyState span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.flowerCard {
+  background: #262626;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #404040;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: all 0.3s;
+}
+
+.flowerCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.flowerCard.green {
+  border-color: #10b981;
+}
+
+.flowerCard.orange {
+  border-color: #f97316;
+}
+
+.flowerCard.red {
+  border-color: #ef4444;
+}
+
+.flowerCard.purple {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #262626 0%, #312e81 100%);
+}
+
+.flowerIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.greenFlower {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.orangeFlower {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.redFlower {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.purpleFlower {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.flowerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskName {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flowerDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.rareLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 6px;
+  width: fit-content;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .modal {
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+  }
+
+  .statsSection {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .statCard {
+    padding: 16px;
+  }
+
+  .statNumber {
+    font-size: 20px;
+  }
+
+  .flowersGrid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .tabs {
+    padding: 0 16px;
+  }
+
+  .tab {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Scrollbar customizada */
+.flowersGrid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.flowersGrid::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.flowersGrid::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.flowersGrid::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
