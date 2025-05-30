@@ -328,3 +328,28 @@
     height: 7px;
   }
 }
+
+/* Flower color variations based on priority */
+.greenFlower {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 
+    0 0 12px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.orangeFlower {
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  box-shadow: 
+    0 0 12px rgba(249, 115, 22, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(249, 115, 22, 0.3) !important;
+}
+
+.redFlower {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  box-shadow: 
+    0 0 12px rgba(239, 68, 68, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
