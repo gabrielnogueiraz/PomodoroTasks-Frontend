@@ -155,6 +155,32 @@
   padding: 2px;
 }
 
+.controlsSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gardenButton {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.gardenButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
 .toggleButton {
   background: transparent;
   border: none;
@@ -487,5 +513,107 @@
   .sessionInfo {
     margin-top: 0.5rem;
     padding: 0.5rem;
+  }
+}
+
+/* Flower Notification */
+.flowerNotification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #1a1a1a, #262626);
+  border: 1px solid #10b981;
+  border-radius: 12px;
+  padding: 16px;
+  color: #fff;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  max-width: 320px;
+}
+
+.flowerNotification.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notificationContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notificationIcon {
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.greenIcon {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.2) !important;
+}
+
+.orangeIcon {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.2) !important;
+}
+
+.redIcon {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2) !important;
+}
+
+.purpleIcon {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.2) !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.6);
+  }
+}
+
+.notificationText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notificationText strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notificationText span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Responsive adjustments for notifications */
+@media (max-width: 768px) {
+  .flowerNotification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .gardenButton {
+    padding: 6px;
+  }
+  
+  .controlsSection {
+    gap: 8px;
   }
 }
