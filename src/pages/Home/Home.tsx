@@ -10,7 +10,12 @@ import TimerIcon from "@mui/icons-material/Timer";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
+import NaturePeopleIcon from "@mui/icons-material/NaturePeople";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 
 const Home: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -38,11 +43,10 @@ const Home: React.FC = () => {
           isScrolled ? styles.headerScrolled : ""
         }`}
       >
-        <div className={styles.headerContainer}>
-          <div className={styles.headerLogo}>
+        <div className={styles.headerContainer}>          <div className={styles.headerLogo}>
             <Link to="/">
-              <img src={logoSvg} alt="PomodoroTasks" />
-              <span>PomodoroTasks</span>
+              <img src={logoSvg} alt="Toivo" />
+              <span>Toivo</span>
             </Link>
           </div>
 
@@ -74,34 +78,223 @@ const Home: React.FC = () => {
             className={`${styles.heroContent} ${
               isVisible ? styles.visible : ""
             }`}
-          >
-            <div className={styles.logoWrapper}>
+          >            <div className={styles.logoWrapper}>
               <img
                 src={logoSvg}
-                alt="PomodoroTasks Logo"
+                alt="Toivo Logo"
                 className={styles.heroLogo}
               />
             </div>
             <h1 className={styles.heroTitle}>
-              Mantenha o <span>foco</span> com <br />
-              PomodoroTasks
+              Cultive <span>Esperança</span> com <br />
+              Toivo
             </h1>
             <p className={styles.heroDescription}>
-              Uma ferramenta gratuita de produtividade que combina pomodoro e
-              gerenciamento de tarefas para ajudar você a se manter focado,
-              organizado e eficiente durante todo o dia.
-            </p>
-            <div className={styles.ctaWrapper}>
+              Transforme sua rotina em um jardim de conquistas. Toivo combina produtividade
+              com crescimento pessoal, onde cada tarefa concluída floresce em seu jardim virtual
+              e cada pomodoro cultiva sua jornada de esperança e renovação.
+            </p>            <div className={styles.ctaWrapper}>
               <Link to="/register" className={styles.ctaButton}>
-                Começar agora <span className={styles.ctaArrow}>→</span>
+                Plante sua primeira semente <span className={styles.ctaArrow}>→</span>
               </Link>
               <Link to="/login" className={styles.secondaryButton}>
-                Fazer login
+                Retornar ao jardim
+              </Link>
+            </div>
+          </div>
+        </div>      </section>
+
+      {/* Video Section */}
+      <section className={styles.videoSection}>
+        <div className={styles.contentWrapper}>
+          <div className={styles.videoContainer}>
+            <div className={styles.videoPlaceholder}>
+              <div className={styles.playButton}>
+                <PlayArrowIcon className={styles.playIcon} />
+              </div>
+              <div className={styles.videoOverlay}>
+                <h3>Veja Toivo em Ação</h3>
+                <p>Descubra como transformar sua produtividade em um jardim de conquistas</p>
+              </div>
+            </div>
+            <div className={styles.videoContent}>
+              <span className={styles.videoLabel}>APRESENTAÇÃO</span>
+              <h2>Uma nova forma de <span>florescer</span></h2>
+              <p>
+                Assista como Toivo transforma cada momento de foco em crescimento pessoal,
+                criando um ecossistema único onde produtividade e bem-estar se encontram.
+              </p>
+              <div className={styles.videoStats}>
+                <div className={styles.videoStat}>
+                  <span className={styles.statNumber}>2min</span>
+                  <span className={styles.statLabel}>de inspiração</span>
+                </div>
+                <div className={styles.videoStat}>
+                  <span className={styles.statNumber}>∞</span>
+                  <span className={styles.statLabel}>possibilidades</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>      {/* Lumi Section */}
+      <section className={styles.lumiSection}>
+        <div className={styles.contentWrapper}>
+          <div className={styles.lumiContainer}>
+            <div className={styles.lumiContent}>
+              <div className={styles.lumiHeader}>
+                <span className={styles.lumiLabel}>CONHEÇA A LUMI</span>
+                <h2>Sua parceira inteligente de <span>produtividade</span></h2>
+              </div>
+              <div className={styles.lumiDescription}>
+                <p>
+                  Lumi é mais que uma assistente - ela é uma revolução em IA conversacional. 
+                  Com personalidade carismática e capacidades avançadas, ela combina Google Gemini 
+                  e OpenRouter para oferecer uma experiência única que evolui com você.
+                </p>
+                <p>
+                  Arquitetura modular de ponta, análise de humor contextual e sistema de 
+                  personalidade adaptativa fazem da Lumi sua companheira inteligente ideal 
+                  para transformar produtividade em crescimento pessoal.
+                </p>
+              </div>
+              <div className={styles.lumiTechStack}>
+                <div className={styles.techItem}>
+                  <span className={styles.techLabel}>IA Dual</span>
+                  <span className={styles.techDetail}>Gemini + OpenRouter</span>
+                </div>
+                <div className={styles.techItem}>
+                  <span className={styles.techLabel}>Arquitetura</span>
+                  <span className={styles.techDetail}>Modular 2.0</span>
+                </div>
+                <div className={styles.techItem}>
+                  <span className={styles.techLabel}>Personalidade</span>
+                  <span className={styles.techDetail}>Adaptativa</span>
+                </div>
+              </div>
+              <div className={styles.lumiFeatures}>
+                <div className={styles.lumiFeature}>
+                  <PsychologyIcon className={styles.lumiFeatureIcon} />
+                  <div>
+                    <h4>Inteligência Adaptativa</h4>
+                    <p>IA que aprende e evolui com seus padrões de trabalho e preferências</p>
+                  </div>
+                </div>
+                <div className={styles.lumiFeature}>
+                  <AutoAwesomeIcon className={styles.lumiFeatureIcon} />
+                  <div>
+                    <h4>Processamento Inteligente</h4>
+                    <p>Extração automática de tarefas e análise contextual avançada</p>
+                  </div>
+                </div>
+                <div className={styles.lumiFeature}>
+                  <FavoriteIcon className={styles.lumiFeatureIcon} />
+                  <div>
+                    <h4>Personalidade Carismática</h4>
+                    <p>Respostas personalizadas baseadas em seu humor e contexto emocional</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.lumiVisual}>
+              <div className={styles.lumiAvatar}>
+                <div className={styles.lumiGlow}></div>
+                <AutoAwesomeIcon className={styles.lumiIcon} />
+                <div className={styles.lumiPulse}></div>
+                <div className={styles.lumiOrbit}></div>
+              </div>
+              <div className={styles.lumiStats}>
+                <div className={styles.lumiStat}>
+                  <span className={styles.statValue}>2.0</span>
+                  <span className={styles.statLabel}>Versão Modular</span>
+                </div>
+                <div className={styles.lumiStat}>
+                  <span className={styles.statValue}>∞</span>
+                  <span className={styles.statLabel}>Possibilidades</span>
+                </div>
+              </div>
+              <div className={styles.lumiQuote}>
+                <p>"Sou sua parceira inteligente de produtividade. Combino IA avançada com personalidade carismática para transformar seu trabalho em crescimento."</p>
+                <span>- Lumi AI 2.0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>      {/* Garden Section */}
+      <section className={styles.gardenSection}>
+        <div className={styles.contentWrapper}>
+          <div className={styles.gardenHeader}>
+            <span className={styles.gardenLabel}>SEU JARDIM VIRTUAL</span>
+            <h2>Cada pomodoro <span>cultiva</span> uma conquista</h2>
+            <p className={styles.gardenSubtitle}>
+              Transforme sua produtividade em um jardim vivo que registra cada vitória
+            </p>
+          </div>
+          
+          <div className={styles.gardenGrid}>
+            <div className={styles.gardenCard}>
+              <div className={styles.gardenCardIcon}>
+                <LocalFloristIcon className={styles.gardenIcon} />
+              </div>
+              <h3>Flores por Prioridade</h3>
+              <p>
+                Flores verdes para tarefas de baixa prioridade, laranjas para médias, 
+                vermelhas para altas e roxas especiais quando você completa 3 tarefas 
+                consecutivas de alta prioridade.
+              </p>
+            </div>
+            
+            <div className={styles.gardenCard}>
+              <div className={styles.gardenCardIcon}>
+                <NaturePeopleIcon className={styles.gardenIcon} />
+              </div>
+              <h3>Crescimento Visual</h3>
+              <p>
+                Acompanhe em tempo real sua planta crescendo durante cada pomodoro: 
+                da semente ao broto, até a flor completa que representa sua conquista.
+              </p>
+            </div>
+            
+            <div className={styles.gardenCard}>
+              <div className={styles.gardenCardIcon}>
+                <AutoAwesomeIcon className={styles.gardenIcon} />
+              </div>
+              <h3>Histórico Permanente</h3>
+              <p>
+                Cada flor preserva a memória: qual tarefa foi concluída, quando, 
+                e quanto tempo durou. Sua jornada fica eternizada no jardim.
+              </p>
+            </div>
+          </div>
+          
+          <div className={styles.gardenShowcase}>
+            <div className={styles.gardenPreview}>
+              <div className={styles.gardenBackground}>
+                <div className={`${styles.gardenFlower} ${styles.greenFlower}`} style={{left: '15%', animationDelay: '0s'}}></div>
+                <div className={`${styles.gardenFlower} ${styles.orangeFlower}`} style={{left: '35%', animationDelay: '0.5s'}}></div>
+                <div className={`${styles.gardenFlower} ${styles.redFlower}`} style={{left: '55%', animationDelay: '1s'}}></div>
+                <div className={`${styles.gardenFlower} ${styles.purpleFlower}`} style={{left: '75%', animationDelay: '1.5s'}}></div>
+                <div className={styles.gardenStats}>
+                  <div className={styles.statBadge}>24 flores</div>
+                  <div className={styles.statBadge}>3 raras</div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.gardenShowcaseContent}>
+              <h3>Sua produtividade visualizada</h3>
+              <p>
+                Cada cor conta uma história diferente: verde para o dia a dia, 
+                laranja para projetos importantes, vermelho para urgências, 
+                e roxo para suas sequências épicas de foco total.
+              </p>
+              <Link to="/register" className={styles.gardenCta}>
+                Plantar primeira flor
               </Link>
             </div>
           </div>
         </div>
       </section>
+
       {/* Features Section */}
       <section
         className={`${styles.features} ${isVisible ? styles.visible : ""}`}
@@ -196,10 +389,9 @@ const Home: React.FC = () => {
             </div>
 
             {/* Feature 6 - Substituído para Assistente IA (em breve) */}
-            <div className={`${styles.featureCard} ${styles.comingSoonCard}`}>
-              <div className={styles.comingSoonBadge}>Em breve</div>
+            <div className={`${styles.featureCard}`}>
               <div className={styles.featureIconWrapper}>
-                <SmartToyIcon className={styles.featureIcon} />
+                <AutoAwesomeIcon className={styles.featureIcon} />
               </div>
               <h3 className={styles.featureTitle}>Assistente com IA</h3>
               <p className={styles.featureDescription}>
@@ -208,12 +400,11 @@ const Home: React.FC = () => {
                 trabalho.
               </p>
             </div>
-          </div>
-
-          <div className={styles.ctaSection}>
-            <h2>Pronto para aumentar sua produtividade?</h2>
+          </div>          <div className={styles.ctaSection}>
+            <h2>Pronto para cultivar sua melhor versão?</h2>
+            <p>Junte-se a milhares de pessoas que já transformaram sua produtividade em crescimento pessoal</p>
             <Link to="/register" className={styles.ctaButton}>
-              Comece agora <span className={styles.ctaArrow}>→</span>
+              Plantar minha primeira semente <span className={styles.ctaArrow}>→</span>
             </Link>
           </div>
         </div>
