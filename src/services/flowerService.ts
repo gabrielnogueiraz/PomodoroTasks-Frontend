@@ -6,24 +6,33 @@ export type FlowerColor = "green" | "orange" | "red" | "purple";
 
 export interface Flower {
   id: string;
-  type: FlowerType;
+  type: "common" | "rare";
   color: FlowerColor;
   createdAt: string;
-  taskName: string;
-  completionTime: number; // em segundos
+  earnedFromTaskTitle: string;
+  task: {
+    id: string;
+    title: string;
+    priority: string;
+  };
 }
 
 export interface GardenStats {
   totalFlowers: number;
-  flowersByType: Record<FlowerType, number>;
-  consecutiveHighPriority: number;
-  totalPomodorosCompleted: number;
+  flowersByType: {
+    GREEN: number;
+    ORANGE: number;
+    RED: number;
+    PURPLE: number;
+  };
   rareFlowersCount: number;
+  totalPomodorosCompleted: number;
+  consecutiveHighPriority: number;
 }
 
 export interface CreateFlowerRequest {
   type: FlowerType;
-  taskName: string;
+  taskId: string;
   completionTime: number;
 }
 
@@ -42,10 +51,18 @@ export const flowerService = {
   createFlower: async (data: CreateFlowerRequest): Promise<Flower> => {
     return api.post<Flower>("/flowers", data);
   },
-
   // Buscar estatísticas do jardim
   getGardenStats: async (): Promise<GardenStats> => {
     return api.get<GardenStats>("/flowers/stats");
+  },
+  // Buscar informações do jardim
+  getGarden: async () => {
+    return api.get("/flowers/garden");
+  },
+
+  // Buscar pomodoros por tarefa para obter tempo de conclusão
+  getPomodorosByTask: async (taskId: string) => {
+    return api.get(`/pomodoros?taskId=${taskId}`);
   },
 
   // Deletar uma flor (se necessário)
