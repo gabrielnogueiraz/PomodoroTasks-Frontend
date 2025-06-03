@@ -102,10 +102,9 @@ const Navbar: React.FC = () => {
               <NavLink to="/dashboard" onClick={closeMenu}>
                 <img
                   src={logo}
-                  alt="PomodoroTasks"
+                  alt="Toivo-Logo"
                   className={styles.logoImage}
                 />
-                <span>PomodoroTasks</span>
               </NavLink>
             </div>
           </div>
