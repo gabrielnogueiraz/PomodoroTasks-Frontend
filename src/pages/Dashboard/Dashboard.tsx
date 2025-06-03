@@ -5,7 +5,7 @@ import pomodoroService, {
   Pomodoro,
   CreatePomodoroDTO,
 } from "../../services/pomodoroService";
-import { priorityToFlowerType } from "../../services/flowerService";
+import { priorityToFlowerType, flowerService } from "../../services/flowerService";
 import { useTaskContext } from "../../hooks/TaskProvider";
 import PlantTimer from "../../components/PlantTimer/PlantTimer";
 import GardenModal from "../../components/GardenModal/GardenModal";
@@ -125,20 +125,52 @@ const Dashboard: React.FC = () => {
   };  const handleTimerComplete = async () => {
     if (activePomodoro && timerMode === "pomodoro") {
       try {
+        console.log("🎯 Iniciando conclusão do pomodoro:", activePomodoro.id);
+        
         // Completar pomodoro no backend
         await pomodoroService.completePomodoro(activePomodoro.id);
+        console.log("✅ Pomodoro completado no backend");
 
         // Atualizar contadores da tarefa se houver uma selecionada
         if (selectedTaskId) {
           const task = tasks.find((t) => t.id === selectedTaskId);
           if (task) {
-            // Atualizar contadores da tarefa
-            await taskService.updateTask(selectedTaskId, {
-              completedPomodoros: task.completedPomodoros + 1,
-            });
+            console.log("🔄 Atualizando tarefa:", task.title);            // Definir o tipo de flor com base na prioridade da tarefa
+            const flowerType = priorityToFlowerType(task.priority);
+            
+            // Verificar se a tarefa é válida (não cancelada)
+            if (task.status !== "cancelled") {
+              // Atualizar contadores da tarefa
+              try {
+                const updatedTask = await taskService.updateTask(selectedTaskId, {
+                  completedPomodoros: task.completedPomodoros + 1,
+                });
+                console.log("✅ Tarefa atualizada com sucesso:", updatedTask.title);
+                
+                // Criar flor no backend apenas se a atualização foi bem sucedida
+                const flowerData = {
+                  type: flowerType,
+                  taskId: selectedTaskId, // Usamos taskId em vez de taskName
+                  completionTime: activePomodoro.duration || customTime * 60,
+                };
+                
+                console.log("🌸 Criando flor no backend:", flowerData);
+                
+                try {
+                  const createdFlower = await flowerService.createFlower(flowerData);
+                  console.log("✅ Flor criada com sucesso no backend:", createdFlower);
+                } catch (flowerError) {
+                  console.error("❌ Erro ao criar flor no backend:", flowerError);
+                  // Continuar mesmo se falhar a criação da flor
+                }
+              } catch (updateError) {
+                console.error("❌ Erro ao atualizar tarefa:", updateError);
+              }
+            } else {
+              console.warn("⚠️ Não é possível criar uma flor para uma tarefa cancelada");
+            }
 
             // Mostrar animação de flor baseada na prioridade
-            const flowerType = priorityToFlowerType(task.priority);
             setFlowerAnimation({
               show: true,
               type: flowerType.toLowerCase() as "green" | "orange" | "red" | "purple",
