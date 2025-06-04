@@ -4,11 +4,11 @@ import { Send, Sparkles, Zap, MessageCircle, Lightbulb } from "lucide-react";
 import MessageRenderer from "../../components/MessageRenderer/MessageRenderer";
 import styles from "./Lumi.module.css";
 
-const Lumi: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+const Lumi: React.FC = () => {  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,7 +41,6 @@ const Lumi: React.FC = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -54,6 +53,7 @@ const Lumi: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
+    setCurrentSuggestions([]); // Limpar sugestões ao enviar nova mensagem
     setIsLoading(true);
 
     // Adiciona mensagem de "digitando"
@@ -64,9 +64,7 @@ const Lumi: React.FC = () => {
       timestamp: new Date(),
       isTyping: true,
     };
-    setMessages((prev) => [...prev, typingMessage]);
-
-    try {
+    setMessages((prev) => [...prev, typingMessage]);    try {
       const response = await lumiService.sendMessage(inputMessage);
 
       // Remove mensagem de digitando
@@ -74,12 +72,26 @@ const Lumi: React.FC = () => {
 
       const lumiMessage: ChatMessage = {
         id: `lumi_${Date.now()}`,
-        message: response,
+        message: response.response, // Agora usa response.response
         isUser: false,
         timestamp: new Date(),
-      };
+      };      setMessages((prev) => [...prev, lumiMessage]);
 
-      setMessages((prev) => [...prev, lumiMessage]);
+      // Atualizar sugestões se disponíveis
+      if (response.suggestions && response.suggestions.length > 0) {
+        setCurrentSuggestions(response.suggestions);
+        console.log("Sugestões da Lumi:", response.suggestions);
+      } else {
+        setCurrentSuggestions([]);
+      }
+
+      // Log das funcionalidades extras da Lumi 3.0
+      if (response.mood) {
+        console.log("Humor da Lumi:", response.mood);
+      }
+      if (response.insights && response.insights.length > 0) {
+        console.log("Insights da Lumi:", response.insights);
+      }
     } catch (error) {
       // Remove mensagem de digitando
       setMessages((prev) => prev.filter((msg) => msg.id !== "typing"));
@@ -151,14 +163,33 @@ const Lumi: React.FC = () => {
                 <h1 className={styles.title}>Lumi</h1>
                 <p className={styles.subtitle}>Sua assistente pessoal de IA</p>
               </div>
-            </div>
-            <div
+            </div>            <div
               className={`${styles.connectionStatus} ${
                 isConnected ? styles.connectedStatus : styles.disconnectedStatus
               }`}
             >
               {isConnected ? "Online" : "Offline"}
             </div>
+            
+            {/* Debug Button - Remove em produção */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={async () => {
+                  console.log("=== DEBUG LUMI ===");
+                  console.log("Session ID:", lumiService.getSessionId());
+                  
+                  try {
+                    const testResponse = await lumiService.sendMessage("teste", { debug: true });
+                    console.log("Teste response:", testResponse);
+                  } catch (error) {
+                    console.error("Teste falhou:", error);
+                  }
+                }}
+                className={styles.debugButton}
+              >
+                🔧 Debug
+              </button>
+            )}
           </div>
         </div>
 
@@ -216,9 +247,7 @@ const Lumi: React.FC = () => {
               </div>
             ))}
             <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Actions */}
+          </div>          {/* Quick Actions */}
           {messages.length <= 1 && (
             <div className={styles.quickActionsContainer}>
               <div className={styles.quickActions}>
@@ -230,6 +259,27 @@ const Lumi: React.FC = () => {
                   >
                     {action.icon}
                     <span>{action.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sugestões da Lumi */}
+          {currentSuggestions.length > 0 && (
+            <div className={styles.suggestionsContainer}>
+              <div className={styles.suggestionsHeader}>
+                <Lightbulb className={styles.suggestionsIcon} />
+                <span>Sugestões da Lumi:</span>
+              </div>
+              <div className={styles.suggestions}>
+                {currentSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setInputMessage(suggestion)}
+                    className={styles.suggestionButton}
+                  >
+                    {suggestion}
                   </button>
                 ))}
               </div>
