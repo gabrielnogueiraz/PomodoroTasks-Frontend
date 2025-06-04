@@ -170,26 +170,6 @@ const Lumi: React.FC = () => {  const [messages, setMessages] = useState<ChatMes
             >
               {isConnected ? "Online" : "Offline"}
             </div>
-            
-            {/* Debug Button - Remove em produção */}
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={async () => {
-                  console.log("=== DEBUG LUMI ===");
-                  console.log("Session ID:", lumiService.getSessionId());
-                  
-                  try {
-                    const testResponse = await lumiService.sendMessage("teste", { debug: true });
-                    console.log("Teste response:", testResponse);
-                  } catch (error) {
-                    console.error("Teste falhou:", error);
-                  }
-                }}
-                className={styles.debugButton}
-              >
-                🔧 Debug
-              </button>
-            )}
           </div>
         </div>
 
