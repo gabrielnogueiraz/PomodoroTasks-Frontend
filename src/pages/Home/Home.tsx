@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./Home.module.css";
 import logoSvg from "../../assets/logo.svg";
+import teaserVideo from "../../assets/Brief_Completo_Toivo_Vídeo_Promocional.mp4";
 
 // Importando ícones do Material Icons
 import GitHubIcon from "@mui/icons-material/GitHub";
@@ -10,7 +11,6 @@ import TimerIcon from "@mui/icons-material/Timer";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
 import NaturePeopleIcon from "@mui/icons-material/NaturePeople";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
@@ -20,6 +20,7 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 const Home: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -35,6 +36,14 @@ const Home: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleVideoPlay = () => {
+    setVideoPlaying(true);
+  };
+
+  const handleVideoPause = () => {
+    setVideoPlaying(false);
+  };
 
   return (
     <div className={styles.container}>
@@ -104,37 +113,50 @@ const Home: React.FC = () => {
             </div>
           </div>
         </div>{" "}
-      </section>
+      </section>{" "}
       {/* Video Section */}
       <section className={styles.videoSection}>
         <div className={styles.contentWrapper}>
-          <div className={styles.videoContainer}>
-            <div className={styles.videoPlaceholder}>
-              <div className={styles.playButton}>
-                <PlayArrowIcon className={styles.playIcon} />
-              </div>
-              <div className={styles.videoOverlay}>
-                <h3>Veja Toivo em Ação</h3>
-                <p>
-                  Descubra como transformar sua produtividade em um jardim de
-                  conquistas
-                </p>
+          <div className={styles.videoContainer}>            <div className={styles.videoWrapper}>
+              <video
+                src={teaserVideo}
+                controls
+                className={styles.videoPlayer}
+                preload="metadata"
+                onPlay={handleVideoPlay}
+                onPause={handleVideoPause}
+                onEnded={handleVideoPause}
+              >
+                Seu navegador não suporta o elemento de vídeo.
+              </video>
+              <div 
+                className={styles.videoOverlayCustom}
+                style={{ opacity: videoPlaying ? 0 : 1 }}
+              >
+                <div className={styles.playButtonCustom}>
+                  <div className={styles.playIconCustom}>▶</div>
+                </div>
+                <div className={styles.videoInfo}>
+                  <h4>Teaser Oficial - Toivo</h4>
+                  <p>8 segundos de esperança</p>
+                </div>
               </div>
             </div>
             <div className={styles.videoContent}>
-              <span className={styles.videoLabel}>APRESENTAÇÃO</span>
+              <span className={styles.videoLabel}>TEASER OFICIAL</span>
               <h2>
-                Uma nova forma de <span>florescer</span>
+                Toivo: Onde esperança <span>floresce</span>
               </h2>
               <p>
-                Assista como Toivo transforma cada momento de foco em
-                crescimento pessoal, criando um ecossistema único onde
-                produtividade e bem-estar se encontram.
+                Conheça o teaser oficial de Toivo, uma experiência única que
+                transforma produtividade em crescimento pessoal. Veja como cada
+                pomodoro se torna uma semente de conquista em seu jardim
+                virtual.
               </p>
               <div className={styles.videoStats}>
                 <div className={styles.videoStat}>
-                  <span className={styles.statNumber}>2min</span>
-                  <span className={styles.statLabel}>de inspiração</span>
+                  <span className={styles.statNumber}>8s</span>
+                  <span className={styles.statLabel}>de apresentação</span>
                 </div>
                 <div className={styles.videoStat}>
                   <span className={styles.statNumber}>∞</span>
@@ -456,11 +478,11 @@ const Home: React.FC = () => {
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.contentWrapper}>
-          <p>© 2025 Gabriel Nogueira. Todos os direitos reservados.</p>
+          <p>© 2025 Gabriel Nogueira. Todos os direitos reservados.</p>{" "}
           <div className={styles.footerLinks}>
-            <a href="#">Termos</a>
-            <a href="#">Privacidade</a>
-            <a href="#">Contato</a>
+            <Link to="/terms">Termos</Link>
+            <Link to="/privacy">Privacidade</Link>
+            <Link to="/contact">Contato</Link>
           </div>
         </div>
       </footer>
