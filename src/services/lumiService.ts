@@ -7,89 +7,185 @@ export interface ChatMessage {
 }
 
 export interface LumiResponse {
-  status: string;
   response: string;
-  mood?: string;
+  mood: LumiMoodType;
   suggestions?: string[];
-  actions?: any[];
-  insights?: string[];
-  session_id?: string;
-  timestamp?: string;
+  actions?: LumiAction[];
+}
+
+export enum LumiMoodType {
+  ENCOURAGING = "encouraging",
+  SUPPORTIVE = "supportive",
+  EXCITED = "excited",
+  FOCUSED = "focused",
+  PROUD = "proud",
+  CONCERNED = "concerned",
+  MOTIVATIONAL = "motivational"
+}
+
+export interface LumiAction {
+  type: "task_created" | "task_updated" | "task_deleted" | "task_completed" | "pomodoro_started";
+  data: any;
+  message?: string;
+}
+
+export interface TaskData {
+  id?: string;
+  title: string;
+  description?: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  status?: "pending" | "in_progress" | "completed" | "cancelled";
+  dueDate?: string;
+  estimatedPomodoros: number;
+  completedPomodoros?: number;
+  tags?: string[];
+}
+
+export interface UserContext {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    memberSince: Date;
+  };
+  recentTasks: any[];
+  garden: {
+    totalFlowers: number;
+    recentFlowers: any[];
+  };
+  statistics: {
+    totalTasksCompleted: number;
+    currentStreak: number;
+    averageCompletionRate: number;
+    mostProductiveTimeOfDay: string;
+  };
+  conversationHistory: any[];
+}
+
+export interface ActionResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
 }
 
 class LumiService {
-  private baseURL = "http://localhost:5000";
-  private sessionId: string;
+  private baseURL = "http://localhost:8080/api/lumi";
 
-  constructor() {
-    this.sessionId = this.generateSessionId();
+  constructor() {}  private getAuthToken(): string | null {
+    const token = localStorage.getItem('@PomodoroTasks:token');
+    console.log('LumiService - Token:', token ? 'Existe' : 'Não existe');
+    return token;
   }
 
-  private generateSessionId(): string {
-    return `web_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+    const token = this.getAuthToken();
+    
+    if (!token) {
+      throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+    }
+
+    const config: RequestInit = {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    };
+
+    try {
+      const response = await fetch(`${this.baseURL}${endpoint}`, config);
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token expirado ou inválido
+          localStorage.removeItem('token');
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+        
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Erro na requisição para Lumi:', error);
+      throw error;
+    }
   }
+
+  // Chat principal com a Lumi - ROTA PRINCIPAL
   async sendMessage(message: string, context?: any): Promise<LumiResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: this.sessionId,
-          message: message,
-          context: context || {},
-          action: "chat"
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: LumiResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Erro ao se comunicar com Lumi:", error);
-      throw new Error(
-        "Não foi possível se conectar com a Lumi. Tente novamente."
-      );
-    }
+    return this.makeRequest('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        message, 
+        context: context || {} 
+      })
+    });
   }
 
-  async sendMessageWithContext(
-    message: string, 
-    userContext: any, 
-    action: string = "chat"
-  ): Promise<LumiResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: this.sessionId,
-          message: message,
-          context: userContext,
-          action: action
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Erro ao se comunicar com Lumi:", error);
-      throw new Error("Não foi possível se conectar com a Lumi. Tente novamente.");
-    }
+  // Ações diretas
+  async executeAction(action: any): Promise<ActionResponse> {
+    return this.makeRequest('/action', {
+      method: 'POST',
+      body: JSON.stringify(action)
+    });
   }
 
+  async createTask(taskData: Partial<TaskData>): Promise<ActionResponse> {
+    return this.makeRequest('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData)
+    });
+  }
+
+  async updateTask(taskId: string, updates: Partial<TaskData>): Promise<ActionResponse> {
+    return this.makeRequest(`/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
+  async deleteTask(taskId: string): Promise<ActionResponse> {
+    return this.makeRequest(`/tasks/${taskId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async startPomodoro(taskId: string, pomodoroData: { duration?: number; notes?: string } = {}): Promise<ActionResponse> {
+    return this.makeRequest(`/tasks/${taskId}/pomodoro`, {
+      method: 'POST',
+      body: JSON.stringify(pomodoroData)
+    });
+  }
+
+  // Contexto e memória
+  async getUserContext(): Promise<UserContext> {
+    return this.makeRequest('/context');
+  }
+
+  async getUserMemory(): Promise<any> {
+    return this.makeRequest('/memory');
+  }
+
+  async getConversationHistory(): Promise<any> {
+    return this.makeRequest('/history');
+  }
+  // Verificar status de conexão
   async checkStatus(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseURL}/`);
+      const token = this.getAuthToken();
+      if (!token) return false;
+
+      const response = await fetch(`${this.baseURL}/context`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       return response.ok;
     } catch (error) {
       console.error("Erro ao verificar status da Lumi:", error);
@@ -97,43 +193,24 @@ class LumiService {
     }
   }
 
+  // Métodos de compatibilidade (mantidos para não quebrar código existente)
+  async sendMessageWithContext(message: string, userContext: any, action: string = "chat"): Promise<LumiResponse> {
+    return this.sendMessage(message, { ...userContext, action });
+  }
+
   async getInsights(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/api/lumi/insights?userId=${this.sessionId}`);
-      return response.json();
-    } catch (error) {
-      console.error("Erro ao obter insights:", error);
-      return null;
-    }
+    return this.getUserMemory();
   }
 
   async getContext(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/api/lumi/context?userId=${this.sessionId}`);
-      return response.json();
-    } catch (error) {
-      console.error("Erro ao obter contexto:", error);
-      return null;
-    }
+    return this.getUserContext();
   }
 
   async getHistory(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/api/lumi/history?userId=${this.sessionId}`);
-      return response.json();
-    } catch (error) {
-      console.error("Erro ao obter histórico:", error);
-      return null;
-    }
+    return this.getConversationHistory();
   }
 
-  // Método helper para enviar mensagem com contexto de pomodoro
-  async sendPomodoroMessage(
-    message: string,
-    pomodoroData: any,
-    taskData?: any,
-    gardenData?: any
-  ): Promise<LumiResponse> {
+  async sendPomodoroMessage(message: string, pomodoroData: any, taskData?: any, gardenData?: any): Promise<LumiResponse> {
     const context = {
       pomodoro: pomodoroData,
       ...(taskData && { task: taskData }),
@@ -141,29 +218,17 @@ class LumiService {
       timestamp: new Date().toISOString()
     };
 
-    return this.sendMessageWithContext(message, context, "pomodoro_interaction");
+    return this.sendMessage(message, context);
   }
 
-  // Método helper para contexto de tarefas
-  async sendTaskMessage(
-    message: string,
-    taskData: any,
-    action: "task_created" | "task_completed" | "task_updated" = "task_created"
-  ): Promise<LumiResponse> {
+  async sendTaskMessage(message: string, taskData: any, action: "task_created" | "task_completed" | "task_updated" = "task_created"): Promise<LumiResponse> {
     const context = {
       task: taskData,
+      action: action,
       timestamp: new Date().toISOString()
     };
 
-    return this.sendMessageWithContext(message, context, action);
-  }
-
-  getSessionId(): string {
-    return this.sessionId;
-  }
-
-  resetSession(): void {
-    this.sessionId = this.generateSessionId();
+    return this.sendMessage(message, context);
   }
 }
 
