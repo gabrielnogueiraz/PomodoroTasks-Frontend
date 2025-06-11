@@ -99,9 +99,7 @@ function App() {
                       replace
                     />
                   }
-                />
-
-                <Route
+                />                <Route
                   path="/lumi"
                   element={
                     <PrivateRoute>
