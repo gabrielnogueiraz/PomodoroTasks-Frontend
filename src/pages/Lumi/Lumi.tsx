@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import lumiService, { ChatMessage, LumiMoodType, LumiAction } from "../../services/lumiService";
-import authService from "../../services/authService";
-import { Send, Sparkles, Zap, MessageCircle, Lightbulb, CheckCircle, AlertCircle, Info, LogIn } from "lucide-react";
+import { Send, Sparkles, Zap, MessageCircle, Lightbulb, CheckCircle, AlertCircle, Info } from "lucide-react";
 import MessageRenderer from "../../components/MessageRenderer/MessageRenderer";
 import LumiActionHandler, { ActionFeedback } from "../../utils/lumiActionHandler";
+import lumiUIAdapter from "../../utils/lumiUIAdapter";
+import lumiErrorHandler from "../../utils/lumiErrorHandler";
 import { useNavigate } from "react-router-dom";
 import styles from "./Lumi.module.css";
 
@@ -12,32 +13,24 @@ const Lumi: React.FC = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
   const [currentMood, setCurrentMood] = useState<LumiMoodType | null>(null);
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const actionHandler = useRef(new LumiActionHandler());
-  const navigate = useNavigate();  useEffect(() => {
-    checkAuthentication();
+  const navigate = useNavigate();
+
+  useEffect(() => {
     setupActionHandlers();
+    checkConnection();
+    addWelcomeMessage();
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated !== null) {
-      checkConnection();
-      addWelcomeMessage();
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  // Auto-hide feedback após 5 segundos
-  useEffect(() => {
+  }, [messages]);  useEffect(() => {
     if (actionFeedback) {
       const timer = setTimeout(() => {
         setActionFeedback(null);
@@ -45,68 +38,43 @@ const Lumi: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [actionFeedback]);
-  const checkAuthentication = () => {
-    const isAuth = authService.isAuthenticated();
-    const token = authService.getToken();
-    console.log('Verificação de autenticação:', { isAuth, token: token ? 'Existe' : 'Não existe' });
-    setIsAuthenticated(isAuth);
-    if (!isAuth) {
-      setIsConnected(false);
-    }
-  };
 
-  const setupActionHandlers = () => {
+  useEffect(() => {
+    if (currentMood) {
+      lumiUIAdapter.adaptUIToMood(currentMood);
+    }
+  }, [currentMood]);const setupActionHandlers = () => {
     const handler = actionHandler.current;
     
-    // Registrar callback para feedback de ações
     handler.registerFeedbackCallback((feedback: ActionFeedback) => {
       setActionFeedback(feedback);
     });
 
-    // Registrar handlers específicos para diferentes tipos de ação
     handler.onTaskCreated((taskData) => {
       console.log('Task criada:', taskData);
-      // Aqui você pode atualizar a UI, recarregar lista de tasks, etc.
     });
 
     handler.onTaskCompleted((taskData) => {
       console.log('Task completada:', taskData);
-      // Aqui você pode atualizar estatísticas, mostrar animação, etc.
     });
 
     handler.onPomodoroStarted((pomodoroData) => {
       console.log('Pomodoro iniciado:', pomodoroData);
-      // Aqui você pode iniciar o timer, navegar para página do pomodoro, etc.
     });
-  };  const checkConnection = async () => {
-    if (!isAuthenticated) {
-      setIsConnected(false);
-      return;
-    }
-    
+  };
+
+  const checkConnection = async () => {
     try {
       const status = await lumiService.checkStatus();
       setIsConnected(status);
     } catch (error) {
       console.error("Erro ao verificar conexão:", error);
       setIsConnected(false);
-      
-      // Se o erro for de autenticação (401), atualizar estado
-      if (error instanceof Error && error.message.includes('401')) {
-        setIsAuthenticated(false);
-      }
     }
-  };  const addWelcomeMessage = () => {
-    let welcomeText = "Olá! Eu sou a Lumi, sua assistente pessoal de produtividade.";
-    
-    if (isAuthenticated === false) {
-      welcomeText = "Olá! Para conversar comigo, você precisa fazer login primeiro. 😊";
-    } else if (isAuthenticated === true) {
-      welcomeText = "Olá! Eu sou a Lumi, sua assistente pessoal de produtividade. Como posso ajudá-lo hoje?";
-    } else {
-      // isAuthenticated === null (carregando)
-      welcomeText = "Verificando autenticação...";
-    }
+  };
+
+  const addWelcomeMessage = () => {
+    const welcomeText = "Olá! Eu sou a Lumi, sua assistente pessoal de produtividade. Como posso ajudá-lo hoje?";
 
     const welcomeMessage: ChatMessage = {
       id: "welcome",
@@ -119,8 +87,7 @@ const Lumi: React.FC = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  const handleSendMessage = async () => {
+  };  const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
@@ -132,10 +99,9 @@ const Lumi: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
-    setCurrentSuggestions([]); // Limpar sugestões ao enviar nova mensagem
+    setCurrentSuggestions([]);
     setIsLoading(true);
 
-    // Adiciona mensagem de "digitando"
     const typingMessage: ChatMessage = {
       id: "typing",
       message: "Lumi está pensando...",
@@ -143,10 +109,11 @@ const Lumi: React.FC = () => {
       timestamp: new Date(),
       isTyping: true,
     };
-    setMessages((prev) => [...prev, typingMessage]);    try {
+    setMessages((prev) => [...prev, typingMessage]);
+
+    try {
       const response = await lumiService.sendMessage(inputMessage);
 
-      // Remove mensagem de digitando
       setMessages((prev) => prev.filter((msg) => msg.id !== "typing"));
 
       const lumiMessage: ChatMessage = {
@@ -158,37 +125,34 @@ const Lumi: React.FC = () => {
 
       setMessages((prev) => [...prev, lumiMessage]);
 
-      // Atualizar sugestões se disponíveis
       if (response.suggestions && response.suggestions.length > 0) {
         setCurrentSuggestions(response.suggestions);
       } else {
         setCurrentSuggestions([]);
       }
 
-      // Atualizar humor da Lumi
       if (response.mood) {
         setCurrentMood(response.mood);
         console.log("Humor da Lumi:", response.mood);
       }
 
-      // Processar ações se disponíveis
       if (response.actions && response.actions.length > 0) {
         console.log("Ações da Lumi:", response.actions);
         await actionHandler.current.processActions(response.actions);
-      }
-    } catch (error) {
-      // Remove mensagem de digitando
+      }    } catch (error) {
       setMessages((prev) => prev.filter((msg) => msg.id !== "typing"));
 
-      const errorMessage: ChatMessage = {
+      const errorMessage = lumiErrorHandler.handleApiError(error);
+
+      const errorMessageObj: ChatMessage = {
         id: `error_${Date.now()}`,
-        message:
-          "Desculpe, não consegui processar sua mensagem. Tente novamente.",
+        message: errorMessage,
         isUser: false,
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessageObj]);
+      lumiErrorHandler.logError(error, 'sendMessage');
     } finally {
       setIsLoading(false);
     }
@@ -198,27 +162,18 @@ const Lumi: React.FC = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };  const handleSuggestionClick = async (suggestion: string) => {
+    setInputMessage(suggestion);
+    await handleSendMessage();
+  };
+
+  const handleQuickActionClick = (action: string) => {
+    setInputMessage(action);
+    inputRef.current?.focus();
   };
 
   const getMoodEmoji = (mood: LumiMoodType): string => {
-    switch (mood) {
-      case LumiMoodType.ENCOURAGING:
-        return "💪";
-      case LumiMoodType.SUPPORTIVE:
-        return "🤗";
-      case LumiMoodType.EXCITED:
-        return "🎉";
-      case LumiMoodType.FOCUSED:
-        return "🎯";
-      case LumiMoodType.PROUD:
-        return "⭐";
-      case LumiMoodType.CONCERNED:
-        return "😕";
-      case LumiMoodType.MOTIVATIONAL:
-        return "🚀";
-      default:
-        return "✨";
-    }
+    return lumiUIAdapter.getMoodEmoji(mood);
   };
 
   const quickActions = [
@@ -282,8 +237,7 @@ const Lumi: React.FC = () => {
               {isConnected ? "Online" : "Offline"}
             </div>
           </div>
-        </div>        {/* Action Feedback */}
-        {actionFeedback && (
+        </div>        {actionFeedback && (
           <div className={`${styles.actionFeedback} ${styles[actionFeedback.type]}`}>
             <div className={styles.feedbackContent}>
               {actionFeedback.type === 'success' && <CheckCircle className={styles.feedbackIcon} />}
@@ -298,26 +252,8 @@ const Lumi: React.FC = () => {
               </button>
             </div>
           </div>
-        )}        {/* Login Prompt */}
-        {isAuthenticated === false && (
-          <div className={styles.loginPrompt}>
-            <div className={styles.loginPromptContent}>
-              <LogIn className={styles.loginIcon} />
-              <div className={styles.loginText}>
-                <h3>Faça login para conversar com a Lumi</h3>
-                <p>A Lumi precisa acessar suas informações pessoais para fornecer uma experiência personalizada.</p>
-              </div>
-              <button 
-                onClick={() => navigate('/login')}
-                className={styles.loginButton}
-              >
-                Fazer Login
-              </button>
-            </div>
-          </div>
         )}
 
-        {/* Messages Area */}
         <div className={styles.messagesContainer}>
           <div className={styles.messagesArea}>
             {messages.map((message) => (
@@ -375,10 +311,9 @@ const Lumi: React.FC = () => {
           {messages.length <= 1 && (
             <div className={styles.quickActionsContainer}>
               <div className={styles.quickActions}>
-                {quickActions.map((action, index) => (
-                  <button
+                {quickActions.map((action, index) => (                  <button
                     key={index}
-                    onClick={() => setInputMessage(action.action)}
+                    onClick={() => handleQuickActionClick(action.action)}
                     className={styles.quickActionButton}
                   >
                     {action.icon}
@@ -397,10 +332,9 @@ const Lumi: React.FC = () => {
                 <span>Sugestões da Lumi:</span>
               </div>
               <div className={styles.suggestions}>
-                {currentSuggestions.map((suggestion, index) => (
-                  <button
+                {currentSuggestions.map((suggestion, index) => (                  <button
                     key={index}
-                    onClick={() => setInputMessage(suggestion)}
+                    onClick={() => handleSuggestionClick(suggestion)}
                     className={styles.suggestionButton}
                   >
                     {suggestion}
@@ -412,19 +346,19 @@ const Lumi: React.FC = () => {
 
           {/* Input Area */}
           <div className={styles.inputContainer}>
-            <div className={styles.inputWrapper}>
-              <input
+            <div className={styles.inputWrapper}>              <input
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}                placeholder="Digite sua mensagem..."
+                onKeyPress={handleKeyPress}
+                placeholder="Digite sua mensagem..."
                 className={styles.messageInput}
-                disabled={isLoading || !isConnected || isAuthenticated !== true}
+                disabled={isLoading || !isConnected}
               />
               <button
                 onClick={handleSendMessage}
-                disabled={isLoading || !inputMessage.trim() || !isConnected || isAuthenticated !== true}
+                disabled={isLoading || !inputMessage.trim() || !isConnected}
                 className={styles.sendButton}
               >
                 <Send className={styles.sendIcon} />
