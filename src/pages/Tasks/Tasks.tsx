@@ -3,6 +3,10 @@ import styles from "./Tasks.module.css";
 import taskService, { Task } from "../../services/taskService";
 import TaskFormModal from "../../components/TaskFormModal/TaskFormModal";
 import Column from "../../components/Column/Column";
+import TaskCalendar from "../../components/Calendar/Calendar";
+import ViewToggle from "../../components/ViewToggle/ViewToggle";
+import TaskDetailModal from "../../components/TaskDetailModal/TaskDetailModal";
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 interface ColumnType {
   id: string;
@@ -15,6 +19,8 @@ interface TaskItem extends Task {
 }
 
 const Tasks: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [columns, setColumns] = useState<ColumnType[]>([
     { id: "col-1", title: "A fazer", taskIds: [] },
     { id: "col-2", title: "Em progresso", taskIds: [] },
@@ -272,6 +278,127 @@ const Tasks: React.FC = () => {
     },
     [tasks, columns]
   );
+
+  // Manipulador para alternar visualização
+  const handleViewChange = (view: 'kanban' | 'calendar') => {
+    setViewMode(view);
+  };
+  // Manipulador para seleção de tarefa no calendário
+  const handleCalendarTaskSelect = (task: Task) => {
+    setSelectedTask(task);
+  };
+
+  // Manipulador para fechar modal de detalhes
+  const handleCloseTaskDetail = () => {
+    setSelectedTask(null);
+  };
+
+  // Manipulador para editar tarefa do modal de detalhes
+  const handleEditTaskFromDetail = (task: Task) => {
+    // Determinar em qual coluna a tarefa está
+    let columnId = "col-1"; // default
+    if (task.status === "in_progress") columnId = "col-2";
+    else if (task.status === "completed") columnId = "col-3";
+
+    setSelectedTask(null);
+    setActiveColumnId(columnId);
+    setShowTaskForm(true);
+  };
+
+  // Manipulador para excluir tarefa do modal de detalhes
+  const handleDeleteTaskFromDetail = async (taskId: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta tarefa?")) {
+      try {
+        await taskService.updateTaskStatus(taskId, "cancelled");
+        
+        // Atualizar estado local
+        const updatedColumns = columns.map((column) => ({
+          ...column,
+          taskIds: column.taskIds.filter((id) => id !== taskId),
+        }));
+
+        const updatedTasks = { ...tasks };
+        delete updatedTasks[taskId];
+
+        setColumns(updatedColumns);
+        setTasks(updatedTasks);
+        setSelectedTask(null);
+      } catch (error) {
+        console.error("Erro ao excluir tarefa:", error);
+        alert("Não foi possível excluir a tarefa. Por favor, tente novamente.");
+      }
+    }
+  };
+
+  // Manipulador para completar tarefa do modal de detalhes
+  const handleCompleteTaskFromDetail = async (taskId: string) => {
+    try {
+      const task = tasks[taskId];
+      if (!task) return;
+
+      let updatedTask;
+      if (task.status === "completed") {
+        updatedTask = await taskService.uncompleteTask(taskId);
+      } else {
+        updatedTask = await taskService.completeTask(taskId);
+      }
+
+      // Determinar nova coluna baseada no status
+      let newColumnId = task.columnId;
+      if (updatedTask.status === "completed") {
+        newColumnId = "col-3";
+      } else if (updatedTask.status === "pending") {
+        newColumnId = "col-1";
+      }
+
+      // Atualizar estado local
+      const updatedColumns = columns.map((column) => {
+        const filteredTaskIds = column.taskIds.filter((id) => id !== taskId);
+
+        if (column.id === newColumnId && !filteredTaskIds.includes(taskId)) {
+          return {
+            ...column,
+            taskIds: [...filteredTaskIds, taskId],
+          };
+        }
+
+        return {
+          ...column,
+          taskIds: filteredTaskIds,
+        };
+      });
+
+      const updatedTasks = {
+        ...tasks,
+        [taskId]: {
+          ...updatedTask,
+          columnId: newColumnId,
+        },
+      };
+
+      setColumns(updatedColumns);
+      setTasks(updatedTasks);
+      setSelectedTask(updatedTasks[taskId]);
+    } catch (error) {
+      console.error("Erro ao alterar status da tarefa:", error);
+      alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
+    }
+  };
+  // Manipulador para seleção de slot no calendário (criar nova tarefa)
+  const handleCalendarSlotSelect = (slot: { start: Date; end: Date }) => {
+    // Converter as datas para o formato esperado pelo modal
+    const startDate = slot.start.toISOString().split('T')[0];
+    const startTime = slot.start.toTimeString().split(' ')[0].substring(0, 5);
+    const endDate = slot.end.toISOString().split('T')[0];
+    const endTime = slot.end.toTimeString().split(' ')[0].substring(0, 5);
+
+    // Você pode implementar lógica para pre-preencher o modal com essas datas
+    console.log('Slot selecionado:', { startDate, startTime, endDate, endTime });
+    
+    // Por enquanto, vamos abrir o modal na primeira coluna
+    setActiveColumnId("col-1");
+    setShowTaskForm(true);
+  };
 
   // Manipulador para adicionar tarefa
   const handleAddTask = (columnId: string) => {
@@ -531,10 +658,15 @@ const Tasks: React.FC = () => {
       <div className={styles.backgroundGradient}></div>
       <div className={styles.backgroundBlob1}></div>
       <div className={styles.backgroundBlob2}></div>
-      
-      <header className={styles.header}>
+        <header className={styles.header}>
         <div className={styles.headerLeft}>
           <h1>Quadro de Tarefas</h1>
+        </div>
+        <div className={styles.headerCenter}>
+          <ViewToggle 
+            currentView={viewMode} 
+            onViewChange={handleViewChange} 
+          />
         </div>
         <div className={styles.headerRight}>
           <div className={styles.statsCard}>
@@ -568,64 +700,82 @@ const Tasks: React.FC = () => {
               </span>
               <span className={styles.statLabel}>Concluídas</span>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </header>
 
-      <div className={styles.board}>
-        {" "}
-        {columns.map((column) => (
-          <Column
-            key={column.id}
-            column={column}
-            tasks={column.taskIds
-              .map((taskId) => tasks[taskId])
-              .filter((task): task is TaskItem => task !== undefined)}
-            moveTask={moveTask}
-            onAddTask={handleAddTask}
-            onRenameColumn={handleRenameColumn}
-            onDeleteColumn={handleDeleteColumn}
-            onDeleteTask={handleDeleteTask}
-            onCompleteTask={handleCompleteTask}
-          />
-        ))}{" "}
-        {!isAddingColumn ? (
-          <button className={styles.addColumnButton} onClick={handleAddColumn}>
-            <div className={styles.addColumnIcon}>+</div>
-            <span>Adicionar coluna</span>
-          </button>
-        ) : (
-          <div className={styles.newColumn}>
-            <input
-              type="text"
-              placeholder="Título da coluna"
-              value={newColumnTitle}
-              onChange={(e) => setNewColumnTitle(e.target.value)}
-              className={styles.newColumnInput}
+      {viewMode === 'kanban' ? (
+        <div className={styles.board}>
+          {columns.map((column) => (
+            <Column
+              key={column.id}
+              column={column}
+              tasks={column.taskIds
+                .map((taskId) => tasks[taskId])
+                .filter((task): task is TaskItem => task !== undefined)}
+              moveTask={moveTask}
+              onAddTask={handleAddTask}
+              onRenameColumn={handleRenameColumn}
+              onDeleteColumn={handleDeleteColumn}
+              onDeleteTask={handleDeleteTask}
+              onCompleteTask={handleCompleteTask}
             />
-            <div className={styles.newColumnActions}>
-              <button
-                onClick={handleConfirmAddColumn}
-                className={styles.confirmButton}
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={handleCancelAddColumn}
-                className={styles.cancelButton}
-              >
-                Cancelar
-              </button>
+          ))}
+          {!isAddingColumn ? (
+            <button className={styles.addColumnButton} onClick={handleAddColumn}>
+              <div className={styles.addColumnIcon}>+</div>
+              <span>Adicionar coluna</span>
+            </button>
+          ) : (
+            <div className={styles.newColumn}>
+              <input
+                type="text"
+                placeholder="Título da coluna"
+                value={newColumnTitle}
+                onChange={(e) => setNewColumnTitle(e.target.value)}
+                className={styles.newColumnInput}
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') handleConfirmAddColumn();
+                  if (e.key === 'Escape') handleCancelAddColumn();
+                }}
+              />
+              <div className={styles.newColumnActions}>
+                <button
+                  onClick={handleConfirmAddColumn}
+                  className={styles.confirmButton}
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={handleCancelAddColumn}
+                  className={styles.cancelButton}
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {showTaskForm && activeColumnId && (
+          )}
+        </div>
+      ) : (
+        <TaskCalendar
+          tasks={Object.values(tasks)}
+          onTaskSelect={handleCalendarTaskSelect}
+          onSlotSelect={handleCalendarSlotSelect}
+        />      )}      {showTaskForm && activeColumnId && (
         <TaskFormModal
           columnId={activeColumnId}
           onClose={() => setShowTaskForm(false)}
           onSubmit={handleCreateTask}
+        />
+      )}
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={handleCloseTaskDetail}
+          onEdit={handleEditTaskFromDetail}
+          onDelete={handleDeleteTaskFromDetail}
+          onComplete={handleCompleteTaskFromDetail}
         />
       )}
     </div>
