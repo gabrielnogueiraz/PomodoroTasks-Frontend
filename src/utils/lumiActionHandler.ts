@@ -12,17 +12,14 @@ export class LumiActionHandler {
 
   constructor() {}
 
-  // Registrar callbacks para diferentes tipos de ação
   registerActionCallback(actionType: string, callback: (data: any) => void) {
     this.actionCallbacks.set(actionType, callback);
   }
 
-  // Registrar callback para feedback de ações
   registerFeedbackCallback(callback: (feedback: ActionFeedback) => void) {
     this.feedbackCallback = callback;
   }
 
-  // Processar array de ações da Lumi
   async processActions(actions: LumiAction[]): Promise<void> {
     for (const action of actions) {
       try {
@@ -38,7 +35,6 @@ export class LumiActionHandler {
     }
   }
 
-  // Processar uma ação individual
   private async processAction(action: LumiAction): Promise<void> {
     const callback = this.actionCallbacks.get(action.type);
     
@@ -46,7 +42,6 @@ export class LumiActionHandler {
       callback(action.data);
     }
 
-    // Mostrar feedback da ação
     switch (action.type) {
       case 'task_created':
         this.showFeedback({
@@ -88,19 +83,33 @@ export class LumiActionHandler {
         });
         break;
 
+      case 'task_suggestion':
+        this.showFeedback({
+          type: 'info',
+          message: action.message || 'Aqui está uma sugestão de tarefa para você!',
+          details: action.data
+        });
+        break;
+
+      case 'insight_provided':
+        this.showFeedback({
+          type: 'info',
+          message: action.message || 'Insight personalizado disponível!',
+          details: action.data
+        });
+        break;
+
       default:
         console.warn('Tipo de ação não reconhecido:', action.type);
     }
   }
 
-  // Mostrar feedback visual
   private showFeedback(feedback: ActionFeedback): void {
     if (this.feedbackCallback) {
       this.feedbackCallback(feedback);
     }
   }
 
-  // Métodos de conveniência para ações específicas
   onTaskCreated(callback: (taskData: TaskData) => void) {
     this.registerActionCallback('task_created', callback);
   }
@@ -121,7 +130,14 @@ export class LumiActionHandler {
     this.registerActionCallback('pomodoro_started', callback);
   }
 
-  // Limpar todos os callbacks
+  onTaskSuggestion(callback: (suggestionData: any) => void) {
+    this.registerActionCallback('task_suggestion', callback);
+  }
+
+  onInsightProvided(callback: (insightData: any) => void) {
+    this.registerActionCallback('insight_provided', callback);
+  }
+
   clearCallbacks() {
     this.actionCallbacks.clear();
     this.feedbackCallback = undefined;
