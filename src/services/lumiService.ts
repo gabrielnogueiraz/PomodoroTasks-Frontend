@@ -1,6 +1,3 @@
-// CORREÇÃO PARA LumiService.ts
-// Substitua o método getUserId() pelo código abaixo:
-
 export interface ChatMessage {
   id: string;
   message: string;
@@ -25,7 +22,7 @@ export interface LumiResponse {
 
 export enum LumiMoodType {
   MOTIVATED = "motivated",
-  FOCUSED = "focused",
+  FOCUSED = "focused", 
   STRUGGLING = "struggling",
   OVERWHELMED = "overwhelmed",
   CELEBRATING = "celebrating",
@@ -35,18 +32,11 @@ export enum LumiMoodType {
   EXCITED = "excited",
   PROUD = "proud",
   CONCERNED = "concerned",
-  MOTIVATIONAL = "motivational",
+  MOTIVATIONAL = "motivational"
 }
 
 export interface LumiAction {
-  type:
-    | "task_created"
-    | "task_updated"
-    | "task_deleted"
-    | "task_completed"
-    | "pomodoro_started"
-    | "task_suggestion"
-    | "insight_provided";
+  type: "task_created" | "task_updated" | "task_deleted" | "task_completed" | "pomodoro_started" | "task_suggestion" | "insight_provided";
   data: any;
   message?: string;
 }
@@ -133,8 +123,6 @@ class LumiService {
   private cache = new Map<string, { data: any; timestamp: number }>();
   private cacheTimeout = 5 * 60 * 1000;
 
-  constructor() {}
-
   private getUserId(): string {
     const userData = localStorage.getItem("@PomodoroTasks:user");
     if (userData) {
@@ -142,72 +130,53 @@ class LumiService {
         const parsedData = JSON.parse(userData);
         const userId = parsedData?.id;
 
-        // 🔧 CORREÇÃO: Validação rigorosa do user_id
-        if (
-          userId &&
-          userId !== null &&
-          userId !== undefined &&
-          userId !== "null" &&
-          userId !== "undefined" &&
-          userId !== "" &&
-          !isNaN(Number(userId)) &&
-          Number(userId) > 0
-        ) {
-          return String(userId);
+        if (userId && this.isValidUUID(userId)) {
+          return userId;
         }
 
-        console.warn(
-          "❌ User ID inválido no localStorage:",
-          userId,
-          "usando fallback: 1"
-        );
-        return "1";
+        console.warn("❌ User ID inválido no localStorage:", userId, "formato esperado: UUID v4");
+        throw new Error("ID de usuário inválido. Faça login novamente.");
       } catch (error) {
         console.error("❌ Erro ao parsear dados do usuário:", error);
-        return "1";
+        throw new Error("Dados de usuário corrompidos. Faça login novamente.");
       }
     }
 
-    console.warn(
-      "⚠️ Nenhum dado de usuário encontrado no localStorage, usando ID padrão: 1"
-    );
-    return "1";
+    console.warn("⚠️ Nenhum dado de usuário encontrado no localStorage");
+    throw new Error("Usuário não autenticado. Faça login primeiro.");
   }
 
-  private async makeRequest(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<any> {
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }
+
+  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
     const config: RequestInit = {
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...options.headers,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers
       },
-      ...options,
+      ...options
     };
 
     try {
       console.log(`🔄 Fazendo requisição para: ${this.baseURL}${endpoint}`);
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
+      
       if (!response.ok) {
         if (response.status === 429) {
-          throw new Error("Rate limit exceeded");
+          throw new Error('Rate limit exceeded');
         }
         if (response.status === 503) {
-          throw new Error("Service unavailable");
+          throw new Error('Service unavailable');
         }
-
-        // 🔧 CORREÇÃO: Melhor tratamento de erros
+        
         let errorMessage = `HTTP ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage =
-            errorData.error?.message ||
-            errorData.message ||
-            errorData.detail ||
-            errorMessage;
+          errorMessage = errorData.error?.message || errorData.message || errorData.detail || errorMessage;
         } catch {
           errorMessage = `HTTP ${response.status} - ${response.statusText}`;
         }
@@ -220,14 +189,14 @@ class LumiService {
       console.log(`✅ Resposta recebida de ${endpoint}:`, data);
       return data;
     } catch (error) {
-      console.error("Erro na requisição para Lumi:", error);
+      console.error('Erro na requisição para Lumi:', error);
       throw error;
     }
   }
 
   private getCachedData<T>(key: string): T | null {
     const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+    if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
       return cached.data;
     }
     return null;
@@ -236,24 +205,17 @@ class LumiService {
   private setCachedData(key: string, data: any): void {
     this.cache.set(key, {
       data,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     });
   }
 
   async sendMessage(message: string, context?: any): Promise<LumiResponse> {
     const userId = this.getUserId();
 
-    // 🔧 CORREÇÃO: Validação final antes do envio
-    const userIdNumber = parseInt(userId);
-    if (isNaN(userIdNumber) || userIdNumber <= 0) {
-      console.error("❌ User ID inválido para envio:", userId);
-      throw new Error("ID de usuário inválido. Faça login novamente.");
-    }
-
-    console.log(`💬 Enviando mensagem para usuário ${userIdNumber}:`, message);
+    console.log(`💬 Enviando mensagem para usuário ${userId}:`, message);
 
     const payload = {
-      user_id: userIdNumber, // 🔧 Enviando como número
+      user_id: userId,
       message: message.trim(),
       ...(context && { context }),
     };
@@ -266,19 +228,14 @@ class LumiService {
     });
   }
 
-  async getAnalytics(
-    period: "day" | "week" | "month" = "week",
-    includeTrends: boolean = true
-  ): Promise<AnalyticsData> {
+  async getAnalytics(period: 'day' | 'week' | 'month' = 'week', includeTrends: boolean = true): Promise<AnalyticsData> {
     const userId = this.getUserId();
     const cacheKey = `analytics_${userId}_${period}_${includeTrends}`;
-
+    
     const cached = this.getCachedData<AnalyticsData>(cacheKey);
     if (cached) return cached;
 
-    const data = await this.makeRequest(
-      `/api/user/${userId}/analytics?period=${period}&include_trends=${includeTrends}`
-    );
+    const data = await this.makeRequest(`/api/user/${userId}/analytics?period=${period}&include_trends=${includeTrends}`);
     this.setCachedData(cacheKey, data);
     return data;
   }
@@ -286,7 +243,7 @@ class LumiService {
   async getInsights(): Promise<InsightData> {
     const userId = this.getUserId();
     const cacheKey = `insights_${userId}`;
-
+    
     const cached = this.getCachedData<InsightData>(cacheKey);
     if (cached) return cached;
 
@@ -298,33 +255,26 @@ class LumiService {
   async getMoodHistory(days: number = 7): Promise<MoodHistoryData> {
     const userId = this.getUserId();
     const cacheKey = `mood_${userId}_${days}`;
-
+    
     const cached = this.getCachedData<MoodHistoryData>(cacheKey);
     if (cached) return cached;
 
-    const data = await this.makeRequest(
-      `/api/user/${userId}/mood-history?days=${days}`
-    );
+    const data = await this.makeRequest(`/api/user/${userId}/mood-history?days=${days}`);
     this.setCachedData(cacheKey, data);
     return data;
   }
 
-  async sendFeedback(
-    interactionId: string,
-    rating: number,
-    feedbackType: string,
-    comment?: string
-  ): Promise<ActionResponse> {
+  async sendFeedback(interactionId: string, rating: number, feedbackType: string, comment?: string): Promise<ActionResponse> {
     const userId = this.getUserId();
     return this.makeRequest(`/api/user/${userId}/feedback`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         interaction_id: interactionId,
         rating,
         feedback_type: feedbackType,
         comment,
-        suggestion_accuracy: rating,
-      }),
+        suggestion_accuracy: rating
+      })
     });
   }
 
@@ -332,7 +282,7 @@ class LumiService {
     try {
       const response = await fetch(`${this.baseURL}/health`);
       const data = await response.json();
-      return data.status === "healthy";
+      return data.status === 'healthy';
     } catch (error) {
       console.error("Erro ao verificar status da Lumi:", error);
       return false;
@@ -343,11 +293,7 @@ class LumiService {
     this.cache.clear();
   }
 
-  async sendMessageWithContext(
-    message: string,
-    userContext: any,
-    action: string = "chat"
-  ): Promise<LumiResponse> {
+  async sendMessageWithContext(message: string, userContext: any, action: string = "chat"): Promise<LumiResponse> {
     return this.sendMessage(message, userContext);
   }
 
@@ -359,12 +305,7 @@ class LumiService {
     return this.getMoodHistory();
   }
 
-  async sendPomodoroMessage(
-    message: string,
-    pomodoroData: any,
-    taskData?: any,
-    gardenData?: any
-  ): Promise<LumiResponse> {
+  async sendPomodoroMessage(message: string, pomodoroData: any, taskData?: any, gardenData?: any): Promise<LumiResponse> {
     return this.sendMessage(message, {
       pomodoro: pomodoroData,
       task: taskData,
@@ -372,32 +313,8 @@ class LumiService {
     });
   }
 
-  async sendTaskMessage(
-    message: string,
-    taskData: any,
-    action: "task_created" | "task_completed" | "task_updated" = "task_created"
-  ): Promise<LumiResponse> {
+  async sendTaskMessage(message: string, taskData: any, action: "task_created" | "task_completed" | "task_updated" = "task_created"): Promise<LumiResponse> {
     return this.sendMessage(message, { task: taskData, action });
-  }
-
-  // 🔧 MÉTODO ADICIONAL: Debug para verificar user_id
-  debugUserId(): void {
-    const userData = localStorage.getItem("@PomodoroTasks:user");
-    console.log("🔍 Debug localStorage data:");
-    console.log("Raw data:", userData);
-
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        console.log("Parsed data:", parsed);
-        console.log("User ID:", parsed?.id);
-        console.log("getUserId() result:", this.getUserId());
-      } catch (e) {
-        console.error("Parse error:", e);
-      }
-    } else {
-      console.log("No user data found");
-    }
   }
 }
 
