@@ -525,12 +525,51 @@ const Tasks: React.FC = () => {
         "Não foi possível alterar o status da tarefa. Por favor, tente novamente."
       );
     }
-  };
-
-  return (
+  };  return (
     <div className={styles.tasksPage}>
+      {/* Elementos de fundo com blur */}
+      <div className={styles.backgroundGradient}></div>
+      <div className={styles.backgroundBlob1}></div>
+      <div className={styles.backgroundBlob2}></div>
+      
       <header className={styles.header}>
-        <h1>Quadro de Tarefas</h1>
+        <div className={styles.headerLeft}>
+          <h1>Quadro de Tarefas</h1>
+        </div>
+        <div className={styles.headerRight}>
+          <div className={styles.statsCard}>
+            <div className={styles.statItem}>
+              <span className={styles.statNumber}>
+                {
+                  Object.values(tasks).filter(
+                    (task) => task.status === "pending"
+                  ).length
+                }
+              </span>
+              <span className={styles.statLabel}>A fazer</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statNumber}>
+                {
+                  Object.values(tasks).filter(
+                    (task) => task.status === "in_progress"
+                  ).length
+                }
+              </span>
+              <span className={styles.statLabel}>Em progresso</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statNumber}>
+                {
+                  Object.values(tasks).filter(
+                    (task) => task.status === "completed"
+                  ).length
+                }
+              </span>
+              <span className={styles.statLabel}>Concluídas</span>
+            </div>
+          </div>
+        </div>
       </header>
 
       <div className={styles.board}>
@@ -552,7 +591,8 @@ const Tasks: React.FC = () => {
         ))}{" "}
         {!isAddingColumn ? (
           <button className={styles.addColumnButton} onClick={handleAddColumn}>
-            + Adicionar coluna
+            <div className={styles.addColumnIcon}>+</div>
+            <span>Adicionar coluna</span>
           </button>
         ) : (
           <div className={styles.newColumn}>
