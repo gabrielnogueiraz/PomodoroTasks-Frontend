@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Calendar, momentLocalizer, Views, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/pt-br';
@@ -27,11 +27,17 @@ const TaskCalendar: React.FC<TaskCalendarProps> = ({
   onTaskSelect,
   onTaskEdit,
   onSlotSelect,
-}) => {
-  const [view, setView] = useState<View>(Views.MONTH);
-  const [date, setDate] = useState(new Date());  // Converter tarefas em eventos do calendário
+}) => {  const [view, setView] = useState<View>(Views.MONTH);
+  const [date, setDate] = useState(new Date());
+  // Debug: monitorar mudanças nas tarefas
+  useEffect(() => {
+    console.log('Calendar: Props tasks atualizadas - Total:', tasks.length);
+  }, [tasks]);// Converter tarefas em eventos do calendário
   const events: CalendarEvent[] = useMemo(() => {
-    return tasksToCalendarEvents(tasks);
+    console.log('Calendar: Recalculando eventos com', tasks.length, 'tarefas');
+    const events = tasksToCalendarEvents(tasks);
+    console.log('Calendar: Eventos gerados:', events.length);
+    return events;
   }, [tasks]);
 
   // Mensagens personalizadas em português
@@ -49,8 +55,7 @@ const TaskCalendar: React.FC<TaskCalendarProps> = ({
     event: 'Tarefa',
     noEventsInRange: 'Não há tarefas neste período.',
     showMore: (total: number) => `+${total} mais`,
-  };
-  // Estilização personalizada para os eventos
+  };  // Estilização personalizada para os eventos
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const colors = getPriorityColor(event.priority);
     const opacity = getStatusOpacity(event.status);
@@ -59,13 +64,16 @@ const TaskCalendar: React.FC<TaskCalendarProps> = ({
       style: {
         backgroundColor: colors.background,
         borderColor: colors.border,
-        border: `1px solid ${colors.border}`,
+        border: `2px solid ${colors.border}`,
         opacity,
         color: '#ffffff',
         borderRadius: '6px',
         fontSize: '0.75rem',
         fontWeight: '500',
         textDecoration: event.status === 'completed' ? 'line-through' : 'none',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        padding: '2px 6px',
+        margin: '1px 0',
       },
     };
   }, []);
