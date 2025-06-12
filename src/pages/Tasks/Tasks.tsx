@@ -18,9 +18,9 @@ interface TaskItem extends Task {
   columnId: string;
 }
 
-const Tasks: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
+const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [calendarKey, setCalendarKey] = useState<number>(0); // Key para forçar re-render do Calendar
   const [columns, setColumns] = useState<ColumnType[]>([
     { id: "col-1", title: "A fazer", taskIds: [] },
     { id: "col-2", title: "Em progresso", taskIds: [] },
@@ -31,39 +31,32 @@ const Tasks: React.FC = () => {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
-  const [newColumnTitle, setNewColumnTitle] = useState("");
-
-  // Função melhorada para carregar tarefas preservando colunas personalizadas
+  const [newColumnTitle, setNewColumnTitle] = useState("");  // Função melhorada para carregar tarefas preservando colunas personalizadas
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        console.log("Iniciando carregamento de tarefas...");
+        
         // Buscar todas as tarefas
         const allTasks = await taskService.getTasks();
+        console.log("Tarefas carregadas do servidor:", allTasks);
 
         // Preparar o mapa de tarefas
         const taskMap: Record<string, TaskItem> = {};
 
-        // Criar um mapa das colunas existentes pelo ID para preservá-las
-        const columnMap: Record<string, ColumnType> = {};
-        columns.forEach((col) => {
-          columnMap[col.id] = { ...col, taskIds: [] }; // Limpar os taskIds
-        });
-
-        // Garantir que as colunas padrão existam
-        if (!columnMap["col-1"])
-          columnMap["col-1"] = { id: "col-1", title: "A fazer", taskIds: [] };
-        if (!columnMap["col-2"])
-          columnMap["col-2"] = {
-            id: "col-2",
-            title: "Em progresso",
-            taskIds: [],
-          };
-        if (!columnMap["col-3"])
-          columnMap["col-3"] = { id: "col-3", title: "Concluído", taskIds: [] };
+        // Criar colunas padrão
+        const columnMap: Record<string, ColumnType> = {
+          "col-1": { id: "col-1", title: "A fazer", taskIds: [] },
+          "col-2": { id: "col-2", title: "Em progresso", taskIds: [] },
+          "col-3": { id: "col-3", title: "Concluído", taskIds: [] }
+        };
 
         // Distribuir as tarefas nas colunas corretas
         allTasks.forEach((task) => {
-          if (task.status === "cancelled") return;
+          if (task.status === "cancelled") {
+            console.log(`Tarefa cancelada ignorada: ${task.id}`);
+            return;
+          }
 
           let columnId = "col-1";
           if (task.status === "in_progress") {
@@ -88,111 +81,69 @@ const Tasks: React.FC = () => {
         setTasks(taskMap);
         setColumns(updatedColumns);
 
-        console.log("Tarefas carregadas com sucesso:", taskMap);
+        console.log("Estados atualizados:");
+        console.log("- Tarefas:", taskMap);
+        console.log("- Colunas:", updatedColumns);
+        console.log("Carregamento concluído com sucesso!");
       } catch (error) {
         console.error("Erro ao carregar tarefas:", error);
       }
     };
 
     fetchTasks();
-  }, []);
-
-  // Verificar duplicatas nas colunas
-  useEffect(() => {
-    const duplicatesMap = new Map();
-
-    columns.forEach((column) => {
-      column.taskIds.forEach((taskId) => {
-        if (!duplicatesMap.has(taskId)) {
-          duplicatesMap.set(taskId, [column.id]);
-        } else {
-          duplicatesMap.get(taskId).push(column.id);
-        }
-      });
-    });
-
-    const duplicates = Array.from(duplicatesMap.entries()).filter(
-      ([_, columns]) => columns.length > 1
-    );
-
-    if (duplicates.length > 0) {
-      console.warn("Tarefas duplicadas detectadas:", duplicates);
-      console.warn(
-        "Colunas:",
-        columns.map((c) => ({ id: c.id, taskIds: c.taskIds }))
-      );
-    }
-  }, [columns]);
-
-  // Função para remover duplicatas
-  const removeTaskDuplicates = useCallback(() => {
-    const taskToColumn = new Map();
-
-    const updatedColumns = columns.map((column) => {
-      const uniqueTaskIds = column.taskIds.filter((taskId) => {
-        if (taskToColumn.has(taskId)) {
-          return false;
-        }
-        taskToColumn.set(taskId, column.id);
-        return true;
-      });
-
-      return {
-        ...column,
-        taskIds: uniqueTaskIds,
-      };
-    });
-
-    setColumns(updatedColumns);
-  }, [columns]);
-
-  // SUBSTITUA TODOS OS useEffect relacionados a duplicatas por este:
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependência vazia intencional para executar apenas uma vez  // Verificar e remover duplicatas (simplificado)
   useEffect(() => {
     // Skip quando as colunas estiverem vazias (inicialização)
-    if (columns.length === 0 || Object.keys(tasks).length === 0) {
+    const columnsCount = columns.length;
+    const tasksCount = Object.keys(tasks).length;
+    
+    if (columnsCount === 0 || tasksCount === 0) {
       return;
     }
 
-    // Criar um snapshot atual para comparação posterior
-    const currentSnapshot = JSON.stringify(columns.map((c) => c.taskIds));
+    // Verificar se há duplicatas
+    const taskOccurrences = new Map<string, number>();
+    let hasDuplicates = false;
 
-    // Verificar e remover duplicatas em um único passo
-    const seen = new Set<string>();
-    let shouldUpdate = false;
-
-    const updatedColumns = columns.map((column) => {
-      const uniqueTaskIds = column.taskIds.filter((taskId) => {
-        if (seen.has(taskId)) {
-          shouldUpdate = true; // Marcar que uma atualização é necessária
-          return false; // Remover duplicata
+    columns.forEach(column => {
+      column.taskIds.forEach(taskId => {
+        const count = taskOccurrences.get(taskId) || 0;
+        taskOccurrences.set(taskId, count + 1);
+        if (count > 0) {
+          hasDuplicates = true;
         }
-        seen.add(taskId);
-        return true;
       });
-
-      // Verificar se esta coluna foi modificada
-      if (uniqueTaskIds.length !== column.taskIds.length) {
-        shouldUpdate = true;
-        return { ...column, taskIds: uniqueTaskIds };
-      }
-
-      return column;
     });
 
-    // Só atualizar estado se necessário e se diferente do estado atual
-    if (shouldUpdate) {
-      const newSnapshot = JSON.stringify(updatedColumns.map((c) => c.taskIds));
-
-      if (currentSnapshot !== newSnapshot) {
-        console.warn("Removendo tarefas duplicadas");
-        setColumns(updatedColumns);
-      }
+    // Se há duplicatas, remover
+    if (hasDuplicates) {
+      console.warn("Removendo tarefas duplicadas");
+      const seen = new Set<string>();
+      const updatedColumns = columns.map(column => ({
+        ...column,
+        taskIds: column.taskIds.filter(taskId => {
+          if (seen.has(taskId)) {
+            return false;
+          }
+          seen.add(taskId);
+          return true;
+        })
+      }));
+      setColumns(updatedColumns);
     }
-  }, [columns, tasks]); // Dependências controladas
-
-  // Logging para debugging
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns.length, Object.keys(tasks).length]); // Dependências otimizadas  // Logging para debugging e atualização do calendar key (otimizado)
   useEffect(() => {
-    console.log("Estado das tarefas atualizado:", tasks);
+    const tasksCount = Object.keys(tasks).length;
+    console.log("Estado das tarefas atualizado:", tasksCount, "tarefas");
+    
+    // Só forçar re-render do Calendar se estamos na view do calendar
+    if (viewMode === 'calendar') {
+      setCalendarKey(prev => prev + 1);
+      console.log("Calendar key atualizada para forçar re-render");
+    }
+    
     // Salvar o status atual das tarefas no localStorage para debugging
     localStorage.setItem(
       "lastTasksState",
@@ -201,12 +152,12 @@ const Tasks: React.FC = () => {
           id: t.id,
           title: t.title,
           status: t.status,
+          priority: t.priority,
           columnId: t.columnId,
         }))
       )
     );
-  }, [tasks]);
-
+  }, [tasks, viewMode]);
   // Função para mover tarefas entre colunas
   const moveTask = useCallback(
     async (taskId: string, fromColumnId: string, toColumnId: string) => {
@@ -234,7 +185,7 @@ const Tasks: React.FC = () => {
         console.log(`Atualizando status para ${newStatus}`);
 
         // Importante: Atualizar o backend ANTES de atualizar o estado local
-        await taskService.updateTaskStatus(taskId, newStatus);
+        const updatedTaskFromServer = await taskService.updateTaskStatus(taskId, newStatus);
         console.log("Backend atualizado com sucesso");
 
         // Atualizar o estado local das colunas
@@ -256,12 +207,11 @@ const Tasks: React.FC = () => {
           };
         });
 
-        // Atualizar o estado local da tarefa
+        // Atualizar o estado local da tarefa com dados do servidor
         const updatedTasks = {
           ...tasks,
           [taskId]: {
-            ...task,
-            status: newStatus,
+            ...updatedTaskFromServer,
             columnId: toColumnId,
           },
         };
@@ -270,7 +220,7 @@ const Tasks: React.FC = () => {
         setColumns(updatedColumns);
         setTasks(updatedTasks);
 
-        console.log("Estado local atualizado com sucesso");
+        console.log("Estado local atualizado com sucesso", updatedTaskFromServer);
       } catch (error) {
         console.error("Erro ao atualizar status da tarefa:", error);
         alert("Não foi possível mover a tarefa. Por favor, tente novamente.");
@@ -383,7 +333,14 @@ const Tasks: React.FC = () => {
       console.error("Erro ao alterar status da tarefa:", error);
       alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
     }
-  };
+  };  // Estado para armazenar dados do slot selecionado
+  const [selectedSlotData, setSelectedSlotData] = useState<{
+    startDate: string;
+    startTime: string;
+    endDate: string;
+    endTime: string;
+  } | null>(null);
+
   // Manipulador para seleção de slot no calendário (criar nova tarefa)
   const handleCalendarSlotSelect = (slot: { start: Date; end: Date }) => {
     // Converter as datas para o formato esperado pelo modal
@@ -392,10 +349,12 @@ const Tasks: React.FC = () => {
     const endDate = slot.end.toISOString().split('T')[0];
     const endTime = slot.end.toTimeString().split(' ')[0].substring(0, 5);
 
-    // Você pode implementar lógica para pre-preencher o modal com essas datas
+    // Armazenar os dados do slot selecionado
+    setSelectedSlotData({ startDate, startTime, endDate, endTime });
+    
     console.log('Slot selecionado:', { startDate, startTime, endDate, endTime });
     
-    // Por enquanto, vamos abrir o modal na primeira coluna
+    // Abrir o modal na primeira coluna
     setActiveColumnId("col-1");
     setShowTaskForm(true);
   };
@@ -404,8 +363,7 @@ const Tasks: React.FC = () => {
   const handleAddTask = (columnId: string) => {
     setActiveColumnId(columnId);
     setShowTaskForm(true);
-  };
-  // Manipulador para criar tarefa
+  };  // Manipulador para criar tarefa
   const handleCreateTask = async (
     columnId: string,
     taskData: {
@@ -429,15 +387,24 @@ const Tasks: React.FC = () => {
         status = "completed";
       }
 
+      // Usar dados do slot selecionado se disponível
+      const finalTaskData = {
+        ...taskData,
+        startDate: taskData.startDate || selectedSlotData?.startDate,
+        endDate: taskData.endDate || selectedSlotData?.endDate,
+        startTime: taskData.startTime || selectedSlotData?.startTime,
+        endTime: taskData.endTime || selectedSlotData?.endTime,
+      };
+
       // Criar a tarefa
       const newTask = await taskService.createTask({
-        title: taskData.title,
-        description: taskData.description || "",
-        priority: taskData.priority,
-        startDate: taskData.startDate,
-        endDate: taskData.endDate,
-        startTime: taskData.startTime,
-        endTime: taskData.endTime,
+        title: finalTaskData.title,
+        description: finalTaskData.description || "",
+        priority: finalTaskData.priority,
+        startDate: finalTaskData.startDate,
+        endDate: finalTaskData.endDate,
+        startTime: finalTaskData.startTime,
+        endTime: finalTaskData.endTime,
         estimatedPomodoros: 1,
       });
 
@@ -445,9 +412,7 @@ const Tasks: React.FC = () => {
       if (status !== "pending") {
         await taskService.updateTaskStatus(newTask.id, status);
         newTask.status = status; // Atualizar o objeto de tarefa local
-      }
-
-      // Atualizar o estado local
+      }      // Atualizar o estado local
       const updatedColumns = columns.map((column) => {
         if (column.id === columnId) {
           return {
@@ -458,14 +423,24 @@ const Tasks: React.FC = () => {
         return column;
       });
 
-      setColumns(updatedColumns);
-      setTasks((prev) => ({
-        ...prev,
+      const updatedTasks = {
+        ...tasks,
         [newTask.id]: {
           ...newTask,
           columnId,
         },
-      }));
+      };
+
+      // Atualizar os estados imediatamente
+      setColumns(updatedColumns);
+      setTasks(updatedTasks);      console.log('Nova tarefa criada e estados atualizados:', {
+        task: newTask,
+        totalTasks: Object.keys(updatedTasks).length,
+        calendaerTasks: Object.values(updatedTasks).length
+      });
+
+      // Limpar dados do slot selecionado
+      setSelectedSlotData(null);
 
       // Fechar modal
       setShowTaskForm(false);
@@ -755,17 +730,22 @@ const Tasks: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      ) : (
+        </div>      ) : (
         <TaskCalendar
+          key={calendarKey} // Key para forçar re-render
           tasks={Object.values(tasks)}
           onTaskSelect={handleCalendarTaskSelect}
           onSlotSelect={handleCalendarSlotSelect}
-        />      )}      {showTaskForm && activeColumnId && (
+        />
+      )}{showTaskForm && activeColumnId && (
         <TaskFormModal
           columnId={activeColumnId}
-          onClose={() => setShowTaskForm(false)}
+          onClose={() => {
+            setShowTaskForm(false);
+            setSelectedSlotData(null); // Limpar dados do slot ao fechar
+          }}
           onSubmit={handleCreateTask}
+          initialData={selectedSlotData || undefined}
         />
       )}
 
