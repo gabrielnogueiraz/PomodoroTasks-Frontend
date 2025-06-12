@@ -16,14 +16,20 @@ const TaskFormModal: React.FC<{
       endTime?: string;
     }
   ) => void;
-}> = ({ columnId, onClose, onSubmit }) => {
+  initialData?: {
+    startDate?: string;
+    endDate?: string;
+    startTime?: string;
+    endTime?: string;
+  };
+}> = ({ columnId, onClose, onSubmit, initialData }) => {
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [startDate, setStartDate] = useState(initialData?.startDate || "");
+  const [endDate, setEndDate] = useState(initialData?.endDate || "");
+  const [startTime, setStartTime] = useState(initialData?.startTime || "");
+  const [endTime, setEndTime] = useState(initialData?.endTime || "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
