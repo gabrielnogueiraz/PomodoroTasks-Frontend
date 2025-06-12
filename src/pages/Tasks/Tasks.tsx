@@ -29,70 +29,164 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
 
   const [tasks, setTasks] = useState<Record<string, TaskItem>>({});
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
-  const [isAddingColumn, setIsAddingColumn] = useState(false);
-  const [newColumnTitle, setNewColumnTitle] = useState("");  // Função melhorada para carregar tarefas preservando colunas personalizadas
+  const [activeColumnId, setActiveColumnId] = useState<string | null>(null);  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState("");
+
+  // Função para carregar tarefas do servidor
+  const fetchTasks = useCallback(async () => {
+    try {
+      console.log("Iniciando carregamento de tarefas...");
+      
+      // Buscar todas as tarefas
+      const allTasks = await taskService.getTasks();
+      console.log("Tarefas carregadas do servidor:", allTasks);
+
+      // Preparar o mapa de tarefas
+      const taskMap: Record<string, TaskItem> = {};
+
+      // Criar colunas padrão
+      const columnMap: Record<string, ColumnType> = {
+        "col-1": { id: "col-1", title: "A fazer", taskIds: [] },
+        "col-2": { id: "col-2", title: "Em progresso", taskIds: [] },
+        "col-3": { id: "col-3", title: "Concluído", taskIds: [] }
+      };
+
+      // Distribuir as tarefas nas colunas corretas
+      allTasks.forEach((task) => {
+        if (task.status === "cancelled") {
+          console.log(`Tarefa cancelada ignorada: ${task.id}`);
+          return;
+        }
+
+        let columnId = "col-1";
+        if (task.status === "in_progress") {
+          columnId = "col-2";
+        } else if (task.status === "completed") {
+          columnId = "col-3";
+        }
+
+        // Adicionar o ID da tarefa à coluna adequada
+        if (columnMap[columnId]) {
+          columnMap[columnId].taskIds.push(task.id);
+        }
+
+        // Adicionar ao mapa de tarefas
+        taskMap[task.id] = { ...task, columnId };
+      });
+
+      // Converter o mapa de volta para um array de colunas
+      const updatedColumns = Object.values(columnMap);
+
+      // Atualizar os estados
+      setTasks(taskMap);
+      setColumns(updatedColumns);
+
+      console.log("Estados atualizados:");
+      console.log("- Tarefas:", taskMap);
+      console.log("- Colunas:", updatedColumns);
+      console.log("Carregamento concluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao carregar tarefas:", error);
+    }
+  }, []);
+
+  // Effect para carregar tarefas inicialmente
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        console.log("Iniciando carregamento de tarefas...");
-        
-        // Buscar todas as tarefas
-        const allTasks = await taskService.getTasks();
-        console.log("Tarefas carregadas do servidor:", allTasks);
+    fetchTasks();
+  }, [fetchTasks]);
 
-        // Preparar o mapa de tarefas
-        const taskMap: Record<string, TaskItem> = {};
+  // Effect para sincronização em tempo real - escutar eventos do TaskProvider
+  useEffect(() => {
+    const handleTaskCreated = (event: CustomEvent) => {
+      const newTask = event.detail;
+      console.log("Tarefa criada detectada no Tasks.tsx:", newTask);
 
-        // Criar colunas padrão
-        const columnMap: Record<string, ColumnType> = {
-          "col-1": { id: "col-1", title: "A fazer", taskIds: [] },
-          "col-2": { id: "col-2", title: "Em progresso", taskIds: [] },
-          "col-3": { id: "col-3", title: "Concluído", taskIds: [] }
-        };
-
-        // Distribuir as tarefas nas colunas corretas
-        allTasks.forEach((task) => {
-          if (task.status === "cancelled") {
-            console.log(`Tarefa cancelada ignorada: ${task.id}`);
-            return;
-          }
-
-          let columnId = "col-1";
-          if (task.status === "in_progress") {
-            columnId = "col-2";
-          } else if (task.status === "completed") {
-            columnId = "col-3";
-          }
-
-          // Adicionar o ID da tarefa à coluna adequada
-          if (columnMap[columnId]) {
-            columnMap[columnId].taskIds.push(task.id);
-          }
-
-          // Adicionar ao mapa de tarefas
-          taskMap[task.id] = { ...task, columnId };
-        });
-
-        // Converter o mapa de volta para um array de colunas
-        const updatedColumns = Object.values(columnMap);
-
-        // Atualizar os estados
-        setTasks(taskMap);
-        setColumns(updatedColumns);
-
-        console.log("Estados atualizados:");
-        console.log("- Tarefas:", taskMap);
-        console.log("- Colunas:", updatedColumns);
-        console.log("Carregamento concluído com sucesso!");
-      } catch (error) {
-        console.error("Erro ao carregar tarefas:", error);
+      // Determinar a coluna baseada no status
+      let columnId = "col-1";
+      if (newTask.status === "in_progress") {
+        columnId = "col-2";
+      } else if (newTask.status === "completed") {
+        columnId = "col-3";
       }
+
+      // Atualizar estado local
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [newTask.id]: { ...newTask, columnId }
+      }));
+
+      setColumns(prevColumns => 
+        prevColumns.map(column => 
+          column.id === columnId 
+            ? { ...column, taskIds: [...column.taskIds, newTask.id] }
+            : column
+        )
+      );
     };
 
-    fetchTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Dependência vazia intencional para executar apenas uma vez  // Verificar e remover duplicatas (simplificado)
+    const handleTaskDeleted = (event: CustomEvent) => {
+      const { taskId } = event.detail;
+      console.log("Tarefa deletada detectada no Tasks.tsx:", taskId);
+
+      // Remover tarefa do estado
+      setTasks(prevTasks => {
+        const newTasks = { ...prevTasks };
+        delete newTasks[taskId];
+        return newTasks;
+      });
+
+      // Remover tarefa das colunas
+      setColumns(prevColumns =>
+        prevColumns.map(column => ({
+          ...column,
+          taskIds: column.taskIds.filter(id => id !== taskId)
+        }))
+      );
+    };
+
+    const handleTaskUpdated = (event: CustomEvent) => {
+      const updatedTask = event.detail;
+      console.log("Tarefa atualizada detectada no Tasks.tsx:", updatedTask);
+
+      // Determinar nova coluna baseada no status
+      let newColumnId = "col-1";
+      if (updatedTask.status === "in_progress") {
+        newColumnId = "col-2";
+      } else if (updatedTask.status === "completed") {
+        newColumnId = "col-3";
+      }
+
+      // Atualizar a tarefa
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [updatedTask.id]: { ...updatedTask, columnId: newColumnId }
+      }));      // Reorganizar colunas se necessário
+      setColumns(prevColumns => {
+        // Remover da coluna atual e adicionar na nova
+        return prevColumns.map(column => {
+          const filteredTaskIds = column.taskIds.filter(id => id !== updatedTask.id);
+          
+          if (column.id === newColumnId) {
+            return { ...column, taskIds: [...filteredTaskIds, updatedTask.id] };
+          }
+          
+          return { ...column, taskIds: filteredTaskIds };
+        });
+      });
+    };
+
+    // Adicionar listeners para os eventos customizados
+    window.addEventListener('taskCreated', handleTaskCreated as EventListener);
+    window.addEventListener('taskDeleted', handleTaskDeleted as EventListener);
+    window.addEventListener('taskUpdated', handleTaskUpdated as EventListener);
+
+    // Cleanup - remover listeners quando o componente desmontar
+    return () => {
+      window.removeEventListener('taskCreated', handleTaskCreated as EventListener);
+      window.removeEventListener('taskDeleted', handleTaskDeleted as EventListener);
+      window.removeEventListener('taskUpdated', handleTaskUpdated as EventListener);
+    };
+  }, []); // Array vazio - listeners são configurados apenas uma vez// Verificar e remover duplicatas (simplificado)
   useEffect(() => {
     // Skip quando as colunas estiverem vazias (inicialização)
     const columnsCount = columns.length;
@@ -214,11 +308,14 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
             ...updatedTaskFromServer,
             columnId: toColumnId,
           },
-        };
-
-        // Atualizar os estados
+        };        // Atualizar os estados
         setColumns(updatedColumns);
         setTasks(updatedTasks);
+
+        // Emitir evento para sincronizar com TaskProvider
+        window.dispatchEvent(new CustomEvent('taskUpdated', { 
+          detail: updatedTaskFromServer 
+        }));
 
         console.log("Estado local atualizado com sucesso", updatedTaskFromServer);
       } catch (error) {
@@ -268,11 +365,14 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
         }));
 
         const updatedTasks = { ...tasks };
-        delete updatedTasks[taskId];
-
-        setColumns(updatedColumns);
+        delete updatedTasks[taskId];        setColumns(updatedColumns);
         setTasks(updatedTasks);
         setSelectedTask(null);
+
+        // Emitir evento para sincronizar com TaskProvider
+        window.dispatchEvent(new CustomEvent('taskDeleted', { 
+          detail: { taskId } 
+        }));
       } catch (error) {
         console.error("Erro ao excluir tarefa:", error);
         alert("Não foi possível excluir a tarefa. Por favor, tente novamente.");
@@ -324,11 +424,14 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
           ...updatedTask,
           columnId: newColumnId,
         },
-      };
-
-      setColumns(updatedColumns);
+      };      setColumns(updatedColumns);
       setTasks(updatedTasks);
       setSelectedTask(updatedTasks[taskId]);
+
+      // Emitir evento para sincronizar com TaskProvider
+      window.dispatchEvent(new CustomEvent('taskUpdated', { 
+        detail: updatedTask 
+      }));
     } catch (error) {
       console.error("Erro ao alterar status da tarefa:", error);
       alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
@@ -429,11 +532,16 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
           ...newTask,
           columnId,
         },
-      };
-
-      // Atualizar os estados imediatamente
+      };      // Atualizar os estados imediatamente
       setColumns(updatedColumns);
-      setTasks(updatedTasks);      console.log('Nova tarefa criada e estados atualizados:', {
+      setTasks(updatedTasks);
+
+      // Emitir evento para sincronizar com TaskProvider
+      window.dispatchEvent(new CustomEvent('taskCreated', { 
+        detail: newTask 
+      }));
+
+      console.log('Nova tarefa criada e estados atualizados:', {
         task: newTask,
         totalTasks: Object.keys(updatedTasks).length,
         calendaerTasks: Object.values(updatedTasks).length
@@ -554,13 +662,16 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
       const updatedColumns = columns.map((column) => ({
         ...column,
         taskIds: column.taskIds.filter((id) => id !== taskId),
-      }));
-
-      const updatedTasks = { ...tasks };
+      }));      const updatedTasks = { ...tasks };
       delete updatedTasks[taskId];
 
       setColumns(updatedColumns);
       setTasks(updatedTasks);
+
+      // Emitir evento para sincronizar com TaskProvider
+      window.dispatchEvent(new CustomEvent('taskDeleted', { 
+        detail: { taskId } 
+      }));
     } catch (error) {
       console.error("Erro ao excluir tarefa:", error);
       alert("Não foi possível excluir a tarefa. Por favor, tente novamente.");
@@ -609,9 +720,7 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
           ...column,
           taskIds: filteredTaskIds,
         };
-      });
-
-      const updatedTasks = {
+      });      const updatedTasks = {
         ...tasks,
         [taskId]: {
           ...updatedTask,
@@ -621,6 +730,11 @@ const Tasks: React.FC = () => {  const [viewMode, setViewMode] = useState<'kanba
 
       setColumns(updatedColumns);
       setTasks(updatedTasks);
+
+      // Emitir evento para sincronizar com TaskProvider
+      window.dispatchEvent(new CustomEvent('taskUpdated', { 
+        detail: updatedTask 
+      }));
     } catch (error) {
       console.error("Erro ao alterar status da tarefa:", error);
       alert(
