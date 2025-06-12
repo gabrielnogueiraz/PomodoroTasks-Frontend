@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Register.module.css';
 import logo from '../../assets/logo.svg';
-import authService from '../../services/authService';
+import { useAuthContext } from '../../hooks/AuthProvider';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -11,6 +11,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { register } = useAuthContext();
   const navigate = useNavigate();
 
   async function handleSubmit(event: FormEvent) {
@@ -25,7 +26,7 @@ const Register = () => {
     }
 
     try {
-      await authService.register({ name, email, password });
+      await register({ name, email, password });
       navigate('/dashboard');
     } catch (error: any) {
       setError(error.message || 'Erro ao criar conta. Tente novamente.');
