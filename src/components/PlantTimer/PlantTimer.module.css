@@ -12,9 +12,16 @@
 }
 
 @keyframes gentle-sway {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(1deg); }
-  75% { transform: rotate(-1deg); }
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(1deg);
+  }
+  75% {
+    transform: rotate(-1deg);
+  }
 }
 
 /* Pot styles - Dark theme */
@@ -24,10 +31,8 @@
   height: 40px;
   background: linear-gradient(145deg, #2d1b1b, #3e2723);
   border-radius: 0 0 30px 30px;
-  box-shadow: 
-    inset 0 2px 4px rgba(0,0,0,0.5),
-    0 4px 12px rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .potRim {
@@ -38,8 +43,8 @@
   height: 6px;
   background: linear-gradient(145deg, #3e2723, #2d1b1b);
   border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .soil {
@@ -58,7 +63,7 @@
   bottom: 35px;
   left: 50%;
   transform: translateX(-50%);
-  transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Seed stage */
@@ -72,12 +77,13 @@
 }
 
 @keyframes seed-pulse {
-  0%, 100% { 
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.8;
     box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
   }
-  50% { 
+  50% {
     transform: scale(1.2);
     opacity: 1;
     box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
@@ -96,25 +102,28 @@
 }
 
 @keyframes grow-up {
-  from { 
+  from {
     height: 0;
     opacity: 0;
   }
-  to { 
+  to {
     height: 25px;
     opacity: 1;
   }
 }
 
 /* Leaves - Dark theme with glowing effect */
-.firstLeaf, .secondLeaf, .thirdLeaf, .fourthLeaf, .fifthLeaf {
+.firstLeaf,
+.secondLeaf,
+.thirdLeaf,
+.fourthLeaf,
+.fifthLeaf {
   position: absolute;
   background: linear-gradient(45deg, #2e7d32, #4caf50);
   border-radius: 50% 10px;
   animation: leaf-grow 0.6s ease-out;
-  box-shadow: 
-    0 0 8px rgba(76, 175, 80, 0.2),
-    inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
@@ -191,9 +200,8 @@
   background: linear-gradient(135deg, #e91e63, #ad1457);
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
   animation: flower-bloom 1s ease-out;
-  box-shadow: 
-    0 0 12px rgba(233, 30, 99, 0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 0 12px rgba(233, 30, 99, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(233, 30, 99, 0.3);
 }
 
@@ -207,9 +215,8 @@
   background: linear-gradient(135deg, #ffc107, #ff8f00);
   border-radius: 50%;
   animation: flower-bloom 1s ease-out 0.2s both;
-  box-shadow: 
-    0 0 8px rgba(255, 193, 7, 0.6),
-    inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 @keyframes flower-bloom {
@@ -288,7 +295,10 @@
 }
 
 /* Stage-specific animations */
-.sprout, .small, .medium, .full {
+.sprout,
+.small,
+.medium,
+.full {
   animation: stage-transition 0.8s ease-out;
 }
 
@@ -313,17 +323,21 @@
     width: 100px;
     height: 100px;
   }
-  
+
   .pot {
     width: 50px;
     height: 35px;
   }
-  
+
   .stem {
     height: 20px;
   }
-  
-  .firstLeaf, .secondLeaf, .thirdLeaf, .fourthLeaf, .fifthLeaf {
+
+  .firstLeaf,
+  .secondLeaf,
+  .thirdLeaf,
+  .fourthLeaf,
+  .fifthLeaf {
     width: 10px;
     height: 7px;
   }
@@ -332,24 +346,21 @@
 /* Flower color variations based on priority */
 .greenFlower {
   background: linear-gradient(135deg, #10b981, #059669) !important;
-  box-shadow: 
-    0 0 12px rgba(16, 185, 129, 0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(16, 185, 129, 0.3) !important;
 }
 
 .orangeFlower {
   background: linear-gradient(135deg, #f97316, #ea580c) !important;
-  box-shadow: 
-    0 0 12px rgba(249, 115, 22, 0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(249, 115, 22, 0.3) !important;
 }
 
 .redFlower {
   background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  box-shadow: 
-    0 0 12px rgba(239, 68, 68, 0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
