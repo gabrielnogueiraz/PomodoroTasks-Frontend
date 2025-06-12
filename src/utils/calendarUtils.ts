@@ -14,20 +14,24 @@ export interface CalendarEvent {
  * Converte uma tarefa em um evento do calendário
  */
 export const taskToCalendarEvent = (task: Task): CalendarEvent | null => {
-  // Só converte tarefas que têm pelo menos uma data definida
-  if (!task.startDate && !task.endDate) {
-    return null;
-  }
-
   // Calcular data de início
-  const startDate = task.startDate 
-    ? new Date(`${task.startDate}${task.startTime ? `T${task.startTime}` : 'T00:00'}`)
-    : new Date();
+  let startDate: Date;
+  if (task.startDate) {
+    startDate = new Date(`${task.startDate}${task.startTime ? `T${task.startTime}` : 'T09:00'}`);
+  } else {
+    // Se não há startDate, usar a data atual
+    const now = new Date();
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0);
+  }
   
   // Calcular data de fim
-  const endDate = task.endDate 
-    ? new Date(`${task.endDate}${task.endTime ? `T${task.endTime}` : 'T23:59'}`)
-    : new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hora depois se não tiver data final
+  let endDate: Date;
+  if (task.endDate) {
+    endDate = new Date(`${task.endDate}${task.endTime ? `T${task.endTime}` : 'T10:00'}`);
+  } else {
+    // Se não há endDate, usar 1 hora depois do início
+    endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+  }
 
   return {
     id: task.id,
@@ -44,10 +48,38 @@ export const taskToCalendarEvent = (task: Task): CalendarEvent | null => {
  * Converte múltiplas tarefas em eventos do calendário
  */
 export const tasksToCalendarEvents = (tasks: Task[]): CalendarEvent[] => {
-  return tasks
-    .filter(task => task.status !== 'cancelled') // Não mostrar tarefas canceladas
-    .map(taskToCalendarEvent)
+  console.log('calendarUtils: Convertendo', tasks.length, 'tarefas em eventos');
+  
+  const events = tasks
+    .filter(task => {
+      // Mostrar todas as tarefas exceto as canceladas
+      // Incluir tarefas concluídas para manter histórico visual
+      return task.status !== 'cancelled';
+    })
+    .map(task => {
+      // Se a tarefa não tem datas definidas, usar data atual para que apareça no calendário
+      if (!task.startDate && !task.endDate) {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0); // 9h da manhã
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0); // 10h da manhã
+        
+        return {
+          id: task.id,
+          title: task.title,
+          start: startOfDay,
+          end: endOfDay,
+          resource: task,
+          priority: task.priority,
+          status: task.status,
+        };
+      }
+      
+      return taskToCalendarEvent(task);
+    })
     .filter((event): event is CalendarEvent => event !== null);
+
+  console.log('calendarUtils: Total de eventos gerados:', events.length);
+  return events;
 };
 
 /**
