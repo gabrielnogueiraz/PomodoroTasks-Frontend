@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import logo from "../../assets/logo.svg";
-import authService from "../../services/authService";
+import { useAuthContext } from "../../hooks/AuthProvider";
 import LogoutIcon from "@mui/icons-material/Logout";
 import TaskSideMenu from "../TaskSideMenu/TaskSideMenu";
 import { useTaskContext } from "../../hooks/TaskProvider";
@@ -14,7 +14,7 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false);
-  const user = authService.getUser();
+  const { user, logout } = useAuthContext();
 
   const { tasks, selectedTaskId, setSelectedTaskId, createTask, deleteTask } =
     useTaskContext();
@@ -40,11 +40,9 @@ const Navbar: React.FC = () => {
   const closeMenu = () => {
     setIsMenuOpen(false);
     document.body.style.overflow = "auto";
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/login");
+  };  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   const toggleTaskMenu = () => {
