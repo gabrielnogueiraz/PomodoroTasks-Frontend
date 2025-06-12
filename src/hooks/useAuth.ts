@@ -10,12 +10,11 @@ interface LoginDTO {
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
   const signIn = useCallback(async (data: LoginDTO) => {
     setIsLoading(true);
     try {
       await authService.login(data);
-      navigate('/tasks');
+      navigate('/dashboard');
     } finally {
       setIsLoading(false);
     }
