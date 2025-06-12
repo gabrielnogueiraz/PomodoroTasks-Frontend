@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../hooks/AuthProvider';
 import styles from './Login.module.css';
 import logo from '../../assets/logo.svg';
 
@@ -8,7 +8,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { login } = useAuthContext();
   const navigate = useNavigate();
 
   async function handleSubmit(event: FormEvent) {
@@ -16,7 +16,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await signIn({ email, password });
+      await login({ email, password });
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
