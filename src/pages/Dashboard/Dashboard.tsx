@@ -65,9 +65,8 @@ const Dashboard: React.FC = () => {
     const progress = (totalTime - time) / totalTime;
     return Math.max(0, Math.min(1, progress));
   };
-
   const getStrokeDashoffset = (): number => {
-    const circumference = 2 * Math.PI * 100; 
+    const circumference = 2 * Math.PI * 100; // 628.32
     const progress = calculateProgress();
     return circumference * (1 - progress);
   };
@@ -295,12 +294,17 @@ const Dashboard: React.FC = () => {
                 <Flower size={20} />
               </button>
             </div>
-          </div>
-
-          {/* Timer Circle */}
+          </div>          {/* Timer Circle */}
           <div className={styles.timerContainer}>
             <div className={styles.timerCircle}>
               <svg className={styles.progressRing} viewBox="0 0 200 200">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#9c27b0" />
+                    <stop offset="50%" stopColor="#ab47bc" />
+                    <stop offset="100%" stopColor="#ba68c8" />
+                  </linearGradient>
+                </defs>
                 <circle
                   className={styles.progressBackground}
                   cx="100"
