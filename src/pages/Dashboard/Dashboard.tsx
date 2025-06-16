@@ -10,6 +10,7 @@ import { useTaskContext } from "../../hooks/TaskProvider";
 import PlantTimer from "../../components/PlantTimer/PlantTimer";
 import GardenModal from "../../components/GardenModal/GardenModal";
 import FlowerCreationAnimation from "../../components/FlowerCreationAnimation/FlowerCreationAnimation";
+import GoalsCard from "../../components/GoalsCard/GoalsCard";
 import { Timer, Sprout, Play, Pause, RotateCcw, Flower } from "lucide-react";
 
 const Dashboard: React.FC = () => {
@@ -230,10 +231,9 @@ const Dashboard: React.FC = () => {
       <div className={styles.backgroundGradient}>
         <div className={styles.backgroundBlob1}></div>
         <div className={styles.backgroundBlob2}></div>
-      </div>
-
-      <main className={styles.mainContent}>
-        <div className={`${styles.timerSection} ${styles.fadeIn}`}>
+      </div>      <main className={styles.mainContent}>
+        <div className={styles.cardsContainer}>
+          <div className={`${styles.timerSection} ${styles.fadeIn}`}>
           {/* Header com controles de modo */}
           <div className={styles.header}>
             <div className={styles.timerModes}>
@@ -412,9 +412,12 @@ const Dashboard: React.FC = () => {
               <div className={styles.noTask}>
                 <span>No task selected</span>
               </div>
-            )}
-          </div>
-        </div>      </main>
+            )}          </div>
+        </div>
+        
+        <GoalsCard />
+      </div>
+      </main>
 
       {/* Animação de Criação de Flor */}
       <FlowerCreationAnimation
