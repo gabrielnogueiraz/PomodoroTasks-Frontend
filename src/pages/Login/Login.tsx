@@ -30,9 +30,9 @@ const Login = () => {
       <div className={styles.brandingSide}>
         <div className={styles.brandingContent}>
           <img src={logo} alt="PomodoroTasks Logo" className={styles.logo} />
-          <h1 className={styles.title}>PomodoroTasks</h1>
+          <h1 className={styles.title}>Toivo</h1>
           <p className={styles.slogan}>
-            Gerencie seu tempo e aumente sua produtividade
+            Sua produtividade com alma!
           </p>
         </div>
         <div className={styles.decorativeCircle1}></div>
