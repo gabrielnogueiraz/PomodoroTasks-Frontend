@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://toivoapi.up.railway.app/api";
+const API_BASE_URL = "http://localhost:8080/api";
 
 export type ApiError = {
   status: number;
