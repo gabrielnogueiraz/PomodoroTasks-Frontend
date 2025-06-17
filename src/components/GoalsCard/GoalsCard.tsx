@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { format, eachDayOfInterval, startOfYear, endOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Flame, Target, Plus, Calendar } from "lucide-react";
+import { Flame, Target, Plus, Calendar, Kanban } from "lucide-react";
 import { Goal } from "../../services/goalService";
 import { DailyStats } from "../../services/analyticsService";
-import { StreakData } from "../../services/streakService";
 import useGoals from "../../hooks/useGoals";
 import CreateGoalModal from "../CreateGoalModal/CreateGoalModal";
 import styles from "./GoalsCard.module.css";
@@ -20,6 +19,22 @@ const GoalsCard: React.FC = () => {
       setSelectedGoal(activeGoals[0]);
     }
   }, [activeGoals, selectedGoal]);
+
+  const handleCreateGoal = async (goalData: any) => {
+    try {
+      await createGoal(goalData);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar meta:', error);
+    }
+  };
+
+  const handleViewKanban = () => {
+    if (selectedGoal) {
+      // Navegar para a página de tarefas com o quadro da meta
+      window.location.href = `/tasks?goalId=${selectedGoal.id}`;
+    }
+  };
 
   const getPieChartData = () => {
     if (!selectedGoal) return [];
@@ -62,7 +77,6 @@ const GoalsCard: React.FC = () => {
     if (count <= 6) return 3;
     return 4;
   };
-
   const getWeekData = () => {
     const heatmapData = getHeatmapData();
     const weeks = [];
@@ -72,15 +86,6 @@ const GoalsCard: React.FC = () => {
     }
     
     return weeks;
-  };
-
-  const handleCreateGoal = async (goalData: any) => {
-    try {
-      await createGoal(goalData);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Erro ao criar meta:', error);
-    }
   };
 
   const months = [
@@ -156,14 +161,21 @@ const GoalsCard: React.FC = () => {
                   /{selectedGoal.targetValue}
                 </span>
               </div>
-            </div>
-            <div className={styles.progressInfo}>
+            </div>            <div className={styles.progressInfo}>
               <p className={styles.goalTitle}>{selectedGoal.title}</p>
               <p className={styles.goalType}>
                 Meta {selectedGoal.type === 'daily' ? 'Diária' : 
                       selectedGoal.type === 'weekly' ? 'Semanal' : 
                       selectedGoal.type === 'monthly' ? 'Mensal' : 'Anual'}
               </p>
+              <button 
+                className={styles.kanbanButton}
+                onClick={handleViewKanban}
+                title="Ver quadro Kanban da meta"
+              >
+                <Kanban size={16} />
+                Ver Quadro
+              </button>
             </div>
           </div>          <div className={styles.heatmapSection}>
             <div className={styles.heatmapContainer}>
