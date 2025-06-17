@@ -17,6 +17,9 @@ export interface Task {
   estimatedPomodoros: number;
   completedPomodoros: number;
   completedAt?: string;
+  columnId?: string;
+  position?: number;
+  isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +34,8 @@ export interface CreateTaskDTO {
   startTime?: string;
   endTime?: string;
   estimatedPomodoros: number;
+  columnId?: string;
+  goalId?: string;
 }
 
 export interface UpdateTaskDTO extends Partial<CreateTaskDTO> {
@@ -71,9 +76,17 @@ const taskService = {
   completeTask: async (id: string): Promise<Task> => {
     return api.patch<Task>(`/tasks/${id}/complete`, {});
   },
-
   uncompleteTask: async (id: string): Promise<Task> => {
     return api.patch<Task>(`/tasks/${id}/incomplete`, {});
+  },
+
+  // Integração com sistema Kanban
+  getTasksByColumn: async (columnId: string): Promise<Task[]> => {
+    return api.get<Task[]>(`/tasks/column/${columnId}`);
+  },
+
+  moveTaskToColumn: async (taskId: string, columnId: string, position: number): Promise<Task> => {
+    return api.put<Task>(`/kanban/tasks/${taskId}/move`, { columnId, position });
   },
 };
 
