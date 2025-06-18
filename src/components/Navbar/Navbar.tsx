@@ -8,17 +8,57 @@ import TaskSideMenu from "../TaskSideMenu/TaskSideMenu";
 import { useTaskContext } from "../../hooks/TaskProvider";
 import MenuIcon from "@mui/icons-material/Menu";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import { Task } from "../../services/taskService";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false);
+  const [sideMenuTasks, setSideMenuTasks] = useState<Task[]>([]);
   const { user, logout } = useAuthContext();
 
   const { tasks, selectedTaskId, setSelectedTaskId, createTask, deleteTask } =
-    useTaskContext();
+    useTaskContext();  // Effect para atualizar tarefas do menu lateral
+  useEffect(() => {
+    // Filtrar e validar todas as tarefas do usuário
+    const validTasks = tasks.filter(task => 
+      task && 
+      task.id && 
+      task.title && 
+      task.status &&
+      task.priority
+    );
+    
+    // Ordenar tarefas: pendentes → em progresso → concluídas
+    const sortedTasks = [...validTasks].sort((a, b) => {
+      // Primeiro, pendentes
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (b.status === 'pending' && a.status !== 'pending') return 1;
+      
+      // Depois, em progresso
+      if (a.status === 'in_progress' && b.status === 'completed') return -1;
+      if (b.status === 'in_progress' && a.status === 'completed') return 1;
+      
+      // Por último, por data de criação (mais recentes primeiro)
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+    
+    setSideMenuTasks(sortedTasks);
+  }, [tasks]);
+  // Effect para escutar atualizações globais
+  useEffect(() => {
+    const handleTasksUpdate = (event: CustomEvent) => {
+      // As tarefas já serão atualizadas via tasks do contexto
+    };
 
+    window.addEventListener('tasksRefreshed', handleTasksUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('tasksRefreshed', handleTasksUpdate as EventListener);
+    };
+  }, []);
+  // Effect para detectar scroll
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -74,10 +114,9 @@ const Navbar: React.FC = () => {
 
     // Aguardar a animação terminar
     setTimeout(async () => {
-      await deleteTask(taskId);
-    }, 300);
+      await deleteTask(taskId);    }, 300);
   };
-
+  // Não precisamos mais filtrar aqui, pois sideMenuTasks já contém todas as tarefas organizadas
   return (
     <>
       <nav
@@ -167,11 +206,9 @@ const Navbar: React.FC = () => {
             </button>
           </div>
         </div>
-      </nav>
-
-      {/* Menu lateral de tarefas */}
+      </nav>      {/* Menu lateral de tarefas */}
       <TaskSideMenu
-        tasks={tasks}
+        tasks={sideMenuTasks}
         selectedTaskId={selectedTaskId}
         onTaskSelect={handleTaskSelect}
         onCreateTask={handleCreateTask}
