@@ -54,9 +54,12 @@ const TaskSideMenu: React.FC<TaskSideMenuProps> = ({
       <aside
         className={`${styles.sidebar} ${isOpen ? styles.sidebarVisible : ""}`}
       >
-        <button className={styles.closeButton} onClick={onClose}>
-          <CloseIcon />
-        </button>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Tarefas</h2>
+          <button className={styles.closeButton} onClick={onClose}>
+            <CloseIcon />
+          </button>
+        </div>
 
         <div className={styles.taskCreator}>
           <div className={styles.inputWrapper}>
