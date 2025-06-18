@@ -65,6 +65,10 @@ export interface ReorderColumnsData {
 }
 
 export const kanbanService = {
+  getBoardById: async (boardId: string): Promise<{ board: KanbanBoard }> => {
+    return api.get<{ board: KanbanBoard }>(`/kanban/boards/${boardId}`);
+  },
+
   getBoardByGoal: async (goalId: string): Promise<{ board: KanbanBoard }> => {
     return api.get<{ board: KanbanBoard }>(`/kanban/boards/goal/${goalId}`);
   },
