@@ -81,6 +81,15 @@ const Tasks: React.FC = () => {
       completed: taskValues.filter(task => task.status === "completed").length
     };  }, [tasksView.tasks]);
 
+  // Adaptar a função createBoard para compatibilidade com a interface de BoardDrawer
+  const adaptedCreateBoard = React.useCallback(
+    async (data: { name: string; description?: string }): Promise<void> => {
+      await boardSelector.createBoard(data);
+      // Retorna void explicitamente para satisfazer a interface
+    },
+    [boardSelector]
+  );
+
   // Verificar loading primeiro
   if (boardSelector.loading) {
     return (
@@ -273,7 +282,9 @@ const Tasks: React.FC = () => {
         selectedBoardId={boardSelector.selectedBoardId}
         onSelectBoard={boardSelector.selectBoard}
         onDeleteBoard={boardSelector.deleteBoard}
+        onCreateBoard={adaptedCreateBoard}
         deleteLoading={boardSelector.deleteLoading}
+        createLoading={boardSelector.createLoading}
         loading={boardSelector.loading}
       />
     </div>
