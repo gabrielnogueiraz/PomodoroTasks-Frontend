@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './BoardDrawer.module.css';
 import { BoardSelectorOption } from '../../hooks/useBoardSelector';
 
@@ -9,7 +9,9 @@ interface BoardDrawerProps {
   selectedBoardId: string | null;
   onSelectBoard: (boardId: string) => void;
   onDeleteBoard: (boardId: string) => Promise<void>;
+  onCreateBoard?: (data: { name: string; description?: string }) => Promise<void>;
   deleteLoading: string | null;
+  createLoading?: boolean;
   loading?: boolean;
 }
 
@@ -20,9 +22,13 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
   selectedBoardId,
   onSelectBoard,
   onDeleteBoard,
+  onCreateBoard,
   deleteLoading,
+  createLoading = false,
   loading = false
 }) => {
+  const [newBoardName, setNewBoardName] = useState<string>("");
+
   const handleDeleteBoard = async (boardId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Evitar que o clique selecione o board
     
@@ -35,17 +41,24 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  const handleCreateBoard = async () => {
+    if (!onCreateBoard || !newBoardName.trim()) return;
+    
+    try {
+      await onCreateBoard({ name: newBoardName.trim() });
+      setNewBoardName("");
+    } catch (error) {
+      alert('Erro ao criar quadro. Tente novamente.');
+    }
+  };
 
-  return (
+  if (!isOpen) return null;  return (
     <>
-      {/* Overlay */}
-      <div className={styles.overlay} onClick={onClose} />
-      
-      {/* Drawer */}
-      <div className={styles.drawer}>
+      {isOpen && <div className={styles.overlay} onClick={onClose}></div>}
+
+      <div className={`${styles.drawer} ${isOpen ? styles.drawerVisible : ""}`}>
         <div className={styles.header}>
-          <h2>Quadros</h2>
+          <h2 className={styles.title}>Quadros</h2>
           <button className={styles.closeButton} onClick={onClose}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path 
@@ -58,7 +71,32 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
             </svg>
           </button>
         </div>
-          <div className={styles.content}>
+
+        <div className={styles.content}>
+          {/* Seção de criação de quadro */}
+          <div className={styles.boardCreator}>
+            <div className={styles.inputWrapper}>
+              <input
+                type="text"
+                value={newBoardName}
+                onChange={(e) => setNewBoardName(e.target.value)}
+                placeholder="Nome do novo quadro..."
+                className={styles.boardInput}
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateBoard()}
+                disabled={createLoading}
+              />
+            </div>
+            <button 
+              onClick={handleCreateBoard} 
+              className={styles.addBoardButton}
+              disabled={createLoading || !newBoardName.trim()}
+            >
+              {createLoading ? (
+                <div className={styles.buttonSpinner}></div>
+              ) : 'Criar Quadro'}
+            </button>
+          </div>
+          
           {loading ? (
             <div className={styles.loading}>
               <p>Carregando quadros...</p>
@@ -66,14 +104,20 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
           ) : boardOptions.length === 0 ? (
             <div className={styles.emptyState}>
               <p>Nenhum quadro disponível</p>
-              <p>Crie uma meta para ter acesso aos quadros Kanban.</p>
+              <p>Crie um quadro usando o campo acima.</p>
             </div>
           ) : (
             <div className={styles.boardList}>
-              {boardOptions.map((board) => (
-                <div key={board.id} className={styles.boardItemWrapper}>                  <button
+              <h2>Seus Quadros</h2>
+              {boardOptions.map((board, index) => (
+                <div 
+                  key={board.id} 
+                  className={styles.boardItemWrapper}
+                  style={{ "--index": index } as React.CSSProperties}
+                >
+                  <button
                     className={`${styles.boardOption} ${
-                      board.goalId === selectedBoardId ? styles.selected : ''
+                      board.id === selectedBoardId ? styles.selected : ''
                     }`}
                     onClick={() => onSelectBoard(board.id)}
                   >
@@ -89,11 +133,12 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
                       </svg>
                     </div>
                     <div className={styles.boardInfo}>
-                      <span className={styles.boardName}>{board.name}</span>
+                      <h3 className={styles.boardName}>{board.name}</h3>
                       {board.goalTitle && (
                         <span className={styles.boardSubtitle}>Meta: {board.goalTitle}</span>
                       )}
-                    </div>                    {board.goalId === selectedBoardId && (
+                    </div>
+                    {board.id === selectedBoardId && (
                       <div className={styles.selectedIndicator}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <path 
@@ -120,15 +165,7 @@ const BoardDrawer: React.FC<BoardDrawerProps> = ({
                         <div className={styles.spinner}></div>
                       </div>
                     ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <path 
-                          d="M3 6H5H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V6H19ZM10 11V17M14 11V17" 
-                          stroke="currentColor" 
-                          strokeWidth="2" 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      '×'
                     )}
                   </button>
                 </div>
