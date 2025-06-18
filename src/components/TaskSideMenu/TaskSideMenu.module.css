@@ -358,6 +358,32 @@
   background: rgba(198, 40, 40, 0.8);
 }
 
+/* Status badges */
+.statusBadge {
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+/* Status-specific styles */
+.status-pending {
+  border-left: 3px solid #f57c00;
+}
+
+.status-in-progress {
+  border-left: 3px solid #2196f3;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+}
+
+.status-completed {
+  border-left: 3px solid #4caf50;
+  opacity: 0.7;
+}
+
+.status-completed .taskHeader h3 {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
 /* Scrollbar personalizada */
 .sidebar::-webkit-scrollbar {
   width: 6px;
