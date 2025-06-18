@@ -14,19 +14,20 @@ export interface BoardSelectorOption {
 }
 
 export const useBoardSelector = (initialGoalId?: string | null) => {
+  console.log('useBoardSelector inicializado com:', initialGoalId);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(initialGoalId || null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
-  
   // Hook para carregar goals/metas
   const { goals, loading: goalsLoading, refresh: refreshGoals } = useGoals();
-    // Hook para carregar boards (sem goalId para pegar todos)
-  const { boards, loading: boardsLoading, refreshBoard } = useKanban();// Preparar opções do seletor - quadros das metas + quadros independentes
+  
+  // Hook para carregar boards (passando null explicitamente para pegar quadros independentes)
+  const { boards, loading: boardsLoading, refreshBoard } = useKanban(null);  // Preparar opções do seletor - quadros das metas + quadros independentes
   const boardOptions: BoardSelectorOption[] = [
     // Quadros das metas
     ...goals.map(goal => ({
-      id: goal.id,
+      id: goal.id, // Para metas, o id é o goalId
       name: `${goal.title}`,
       goalId: goal.id,
       goalTitle: goal.title,
@@ -34,17 +35,20 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
     })),
     // Quadros independentes
     ...boards.map(board => ({
-      id: board.id,
+      id: board.id, // Para quadros independentes, o id é o boardId
       name: board.name,
       boardId: board.id,
       type: 'standalone' as const
     }))
   ];  // Encontrar board selecionado
-  const selectedBoard = boardOptions.find(board => 
-    board.type === 'goal' 
-      ? board.goalId === selectedBoardId
-      : board.boardId === selectedBoardId
-  ) || boardOptions[0] || null;
+  const selectedBoard = boardOptions.find(board => board.id === selectedBoardId) || 
+                       boardOptions[0] || 
+                       null;
+  
+  // Log para debug
+  console.log('useBoardSelector - selectedBoardId:', selectedBoardId);
+  console.log('useBoardSelector - selectedBoard:', selectedBoard);
+  console.log('useBoardSelector - boardOptions:', boardOptions);
 
   // Função para alternar drawer
   const toggleDrawer = useCallback(() => {
@@ -56,24 +60,28 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
     setIsDrawerOpen(false);
   }, []);  // Função para selecionar board
   const selectBoard = useCallback((boardId: string) => {
+    console.log('Selecionando board:', boardId);
     setSelectedBoardId(boardId);
     setIsDrawerOpen(false);
-  }, []);
-  // Função para criar novo board
+  }, []);// Função para criar novo board
   const createBoard = useCallback(async (boardData: CreateBoardData) => {
     try {
       setCreateLoading(true);
       
+      console.log('Criando quadro:', boardData);
+      
       // Chamar API para criar o board
       const response = await kanbanService.createStandaloneBoard(boardData);
+        console.log('Quadro criado com sucesso:', response.board);
       
-      // Atualizar listas para refletir a criação
-      await Promise.all([refreshGoals(), refreshBoard()]);
+      // Primeiro atualizar a lista de quadros
+      await refreshBoard();
+      console.log('Lista de quadros atualizada');
       
-      // Selecionar o novo board criado
+      // Depois selecionar o novo board criado
       setSelectedBoardId(response.board.id);
+      console.log('Board selecionado:', response.board.id);
       
-      console.log('Quadro criado com sucesso:', response.board);
       return response.board;
     } catch (error) {
       console.error('Erro ao criar quadro:', error);
@@ -81,45 +89,31 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
     } finally {
       setCreateLoading(false);
     }
-  }, [refreshGoals, refreshBoard]);
-
-  // Função para excluir board
+  }, [refreshBoard]);  // Função para excluir board
   const deleteBoard = useCallback(async (boardId: string) => {
     try {
       setDeleteLoading(boardId);
       
-      // Buscar o board para obter o tipo e ID correto
-      const boardToDelete = boardOptions.find(board => 
-        board.type === 'goal' 
-          ? board.goalId === boardId
-          : board.boardId === boardId
-      );
+      // Buscar o board para obter o tipo
+      const boardToDelete = boardOptions.find(board => board.id === boardId);
       
       if (!boardToDelete) {
         throw new Error('Quadro não encontrado');
       }
 
       // Chamar API para excluir o board
-      const deleteId = boardToDelete.type === 'goal' 
-        ? boardToDelete.goalId 
-        : boardToDelete.boardId;
-        
-      if (!deleteId) {
-        throw new Error('ID do quadro não encontrado');
+      await kanbanService.deleteBoard(boardId);
+      
+      // Atualizar as listas apropriadas baseado no tipo do board
+      if (boardToDelete.type === 'goal') {
+        await refreshGoals();
+      } else {
+        await refreshBoard();
       }
-      
-      await kanbanService.deleteBoard(deleteId);
-      
-      // Atualizar listas para refletir a exclusão
-      await Promise.all([refreshGoals(), refreshBoard()]);
       
       // Se o board excluído era o selecionado, selecionar outro
       if (selectedBoardId === boardId) {
-        const remainingBoards = boardOptions.filter(board => 
-          board.type === 'goal' 
-            ? board.goalId !== boardId
-            : board.boardId !== boardId
-        );
+        const remainingBoards = boardOptions.filter(board => board.id !== boardId);
         setSelectedBoardId(remainingBoards[0]?.id || null);
       }
       
@@ -130,13 +124,20 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
     } finally {
       setDeleteLoading(null);
     }
-  }, [boardOptions, selectedBoardId, refreshGoals, refreshBoard]);
-  // Atualizar board selecionado quando initialGoalId mudar
+  }, [boardOptions, selectedBoardId, refreshGoals, refreshBoard]);  // Atualizar board selecionado quando initialGoalId mudar
   useEffect(() => {
     if (initialGoalId !== undefined) {
       setSelectedBoardId(initialGoalId);
     }
   }, [initialGoalId]);
+
+  // Auto-selecionar primeiro board se não há nenhum selecionado
+  useEffect(() => {
+    if (!selectedBoardId && boardOptions.length > 0) {
+      console.log('Auto-selecionando primeiro board:', boardOptions[0].id);
+      setSelectedBoardId(boardOptions[0].id);
+    }
+  }, [selectedBoardId, boardOptions]);
 
   return {
     // Estado do drawer
