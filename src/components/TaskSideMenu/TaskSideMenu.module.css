@@ -66,10 +66,23 @@
   left: 0;
 }
 
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-top: 0.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0;
+}
+
 .closeButton {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   background: rgba(255, 255, 255, 0.1);
   color: white;
   border: none;
@@ -81,7 +94,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .closeButton:hover {
@@ -98,7 +111,6 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 1.8rem;
-  margin-top: 3rem;
   background: rgba(37, 37, 52, 0.7);
   border-radius: 12px;
   padding: 1.5rem;
