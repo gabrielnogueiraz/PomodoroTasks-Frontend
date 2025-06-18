@@ -17,14 +17,33 @@ const Tasks: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const goalIdFromUrl = searchParams.get('goalId');
-  
-  // Hook para gerenciar seleção de boards
-  const boardSelector = useBoardSelector(goalIdFromUrl);
-    // Usar goalId do seletor de boards
-  const currentGoalId = boardSelector.selectedBoardId;
+  const boardIdFromUrl = searchParams.get('boardId');    // Hook para gerenciar seleção de boards
+  const boardSelector = useBoardSelector(goalIdFromUrl || boardIdFromUrl);
+  // Determinar o goalId e boardId corretos baseado no tipo do board selecionado
+  const { currentGoalId, currentBoardId } = React.useMemo(() => {
+    const selectedBoard = boardSelector.selectedBoard;
+    console.log('useMemo - selectedBoard changed:', selectedBoard);
+    if (!selectedBoard) return { currentGoalId: null, currentBoardId: null };
+    
+    // Se for um quadro de meta, usar o goalId
+    if (selectedBoard.type === 'goal') {
+      console.log('Using goal board:', selectedBoard.goalId);
+      return { 
+        currentGoalId: selectedBoard.goalId || null,
+        currentBoardId: null 
+      };
+    }
+    
+    // Se for um quadro independente, usar o boardId
+    console.log('Using standalone board:', selectedBoard.boardId);
+    return { 
+      currentGoalId: null,
+      currentBoardId: selectedBoard.boardId || null 
+    };
+  }, [boardSelector.selectedBoard]);
   
   // Hook principal para gerenciar estado e dados
-  const tasksView = useTasksView(currentGoalId);
+  const tasksView = useTasksView(currentGoalId, currentBoardId);
   
   // Hook para movimento de tarefas
   const { moveTask } = useMoveTask({
@@ -65,21 +84,42 @@ const Tasks: React.FC = () => {
     deleteColumn: tasksView.deleteColumn,
   });  // Atualizar URL quando board for selecionado
   React.useEffect(() => {
-    if (currentGoalId && currentGoalId !== goalIdFromUrl) {
-      navigate(`/tasks?goalId=${currentGoalId}`, { replace: true });
-    } else if (!currentGoalId && goalIdFromUrl) {
+    const selectedBoard = boardSelector.selectedBoard;
+    console.log('useEffect - selectedBoard:', selectedBoard);
+    console.log('useEffect - goalIdFromUrl:', goalIdFromUrl);
+    console.log('useEffect - boardIdFromUrl:', boardIdFromUrl);
+    
+    if (!selectedBoard) return;
+    
+    // Para quadros de meta: usar goalId na URL
+    if (selectedBoard.type === 'goal' && selectedBoard.goalId) {
+      if (selectedBoard.goalId !== goalIdFromUrl) {
+        console.log('Navegando para goalId:', selectedBoard.goalId);
+        navigate(`/tasks?goalId=${selectedBoard.goalId}`, { replace: true });
+      }
+    }
+    // Para quadros independentes: usar boardId na URL
+    else if (selectedBoard.type === 'standalone' && selectedBoard.boardId) {
+      if (selectedBoard.boardId !== boardIdFromUrl) {
+        console.log('Navegando para boardId:', selectedBoard.boardId);
+        navigate(`/tasks?boardId=${selectedBoard.boardId}`, { replace: true });
+      }
+    }
+    // Limpar URL se não há board selecionado
+    else if (!selectedBoard.goalId && !selectedBoard.boardId && (goalIdFromUrl || boardIdFromUrl)) {
+      console.log('Limpando URL');
       navigate('/tasks', { replace: true });
     }
-  }, [currentGoalId, goalIdFromUrl, navigate]);
-
+  }, [boardSelector.selectedBoard, goalIdFromUrl, boardIdFromUrl, navigate]);
   // Memoizar estatísticas para evitar recálculos desnecessários
   const stats = React.useMemo(() => {
     const taskValues = Object.values(tasksView.tasks);
     return {
-      pending: taskValues.filter(task => task.status === "pending").length,
-      inProgress: taskValues.filter(task => task.status === "in_progress").length,
-      completed: taskValues.filter(task => task.status === "completed").length
-    };  }, [tasksView.tasks]);
+      pending: taskValues.filter((task: any) => task.status === "pending").length,
+      inProgress: taskValues.filter((task: any) => task.status === "in_progress").length,
+      completed: taskValues.filter((task: any) => task.status === "completed").length
+    };
+  }, [tasksView.tasks]);
 
   // Adaptar a função createBoard para compatibilidade com a interface de BoardDrawer
   const adaptedCreateBoard = React.useCallback(
@@ -194,14 +234,13 @@ const Tasks: React.FC = () => {
       </header>
 
       {tasksView.viewMode === 'kanban' ? (
-        <div className={styles.board}>
-          {tasksView.columns.map((column) => (
+        <div className={styles.board}>          {tasksView.columns.map((column: any) => (
             <Column
               key={column.id}
               column={column}
               tasks={column.taskIds
-                .map((taskId) => tasksView.tasks[taskId])
-                .filter((task) => task !== undefined)}
+                .map((taskId: string) => tasksView.tasks[taskId])
+                .filter((task: any) => task !== undefined)}
               moveTask={moveTask}
               onAddTask={handlers.handleAddTask}
               onRenameColumn={handlers.handleRenameColumn}
