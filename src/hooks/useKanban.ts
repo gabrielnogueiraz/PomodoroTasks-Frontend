@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import kanbanService, { KanbanBoard, KanbanColumn, CreateColumnData, UpdateColumnData, MoveTaskData } from '../services/kanbanService';
 
-export const useKanban = (goalId?: string) => {
+export const useKanban = (goalId?: string | null) => {
   const [board, setBoard] = useState<KanbanBoard | null>(null);
   const [boards, setBoards] = useState<KanbanBoard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,12 +20,13 @@ export const useKanban = (goalId?: string) => {
       setLoading(false);
     }
   }, []);
-
   const fetchUserBoards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Buscando quadros do usuário...');
       const { boards } = await kanbanService.getUserBoards();
+      console.log('Quadros encontrados:', boards);
       setBoards(boards);
     } catch (err) {
       setError('Erro ao carregar quadros');
@@ -131,11 +132,11 @@ export const useKanban = (goalId?: string) => {
       throw err;
     }
   }, []);
-
   useEffect(() => {
     if (goalId) {
       fetchBoardByGoal(goalId);
-    } else {
+    } else if (goalId === null || goalId === undefined) {
+      // Explicitamente buscar quadros do usuário quando goalId for null/undefined
       fetchUserBoards();
     }
   }, [goalId, fetchBoardByGoal, fetchUserBoards]);
