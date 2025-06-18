@@ -44,11 +44,6 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
   const selectedBoard = boardOptions.find(board => board.id === selectedBoardId) || 
                        boardOptions[0] || 
                        null;
-  
-  // Log para debug
-  console.log('useBoardSelector - selectedBoardId:', selectedBoardId);
-  console.log('useBoardSelector - selectedBoard:', selectedBoard);
-  console.log('useBoardSelector - boardOptions:', boardOptions);
 
   // Função para alternar drawer
   const toggleDrawer = useCallback(() => {
@@ -71,16 +66,13 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
       console.log('Criando quadro:', boardData);
       
       // Chamar API para criar o board
-      const response = await kanbanService.createStandaloneBoard(boardData);
-        console.log('Quadro criado com sucesso:', response.board);
+      const response = await kanbanService.createStandaloneBoard(boardData);      console.log('Quadro criado com sucesso:', response.board.name);
       
       // Primeiro atualizar a lista de quadros
       await refreshBoard();
-      console.log('Lista de quadros atualizada');
       
       // Depois selecionar o novo board criado
       setSelectedBoardId(response.board.id);
-      console.log('Board selecionado:', response.board.id);
       
       return response.board;
     } catch (error) {
@@ -130,11 +122,9 @@ export const useBoardSelector = (initialGoalId?: string | null) => {
       setSelectedBoardId(initialGoalId);
     }
   }, [initialGoalId]);
-
   // Auto-selecionar primeiro board se não há nenhum selecionado
   useEffect(() => {
     if (!selectedBoardId && boardOptions.length > 0) {
-      console.log('Auto-selecionando primeiro board:', boardOptions[0].id);
       setSelectedBoardId(boardOptions[0].id);
     }
   }, [selectedBoardId, boardOptions]);
