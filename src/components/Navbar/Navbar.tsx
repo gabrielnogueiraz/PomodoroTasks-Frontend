@@ -132,7 +132,7 @@ const Navbar: React.FC = () => {
                 }
                 onClick={closeMenu}
               >
-                Pomodoro
+                Dashboard
               </NavLink>
             </li>
             <li>
@@ -143,7 +143,7 @@ const Navbar: React.FC = () => {
                 }
                 onClick={closeMenu}
               >
-                Kanban
+                Tasks
               </NavLink>
             </li>
 
