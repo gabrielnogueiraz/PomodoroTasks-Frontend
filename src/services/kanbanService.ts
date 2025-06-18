@@ -55,6 +55,11 @@ export interface MoveTaskData {
   position: number;
 }
 
+export interface CreateBoardData {
+  name: string;
+  description?: string;
+}
+
 export interface ReorderColumnsData {
   columnIds: string[];
 }
@@ -63,9 +68,12 @@ export const kanbanService = {
   getBoardByGoal: async (goalId: string): Promise<{ board: KanbanBoard }> => {
     return api.get<{ board: KanbanBoard }>(`/kanban/boards/goal/${goalId}`);
   },
-
   getUserBoards: async (): Promise<{ boards: KanbanBoard[] }> => {
     return api.get<{ boards: KanbanBoard[] }>('/kanban/boards');
+  },
+
+  createStandaloneBoard: async (data: CreateBoardData): Promise<{ board: KanbanBoard }> => {
+    return api.post<{ board: KanbanBoard }>('/kanban/boards', data);
   },
 
   updateBoard: async (boardId: string, data: { name?: string; description?: string }): Promise<{ board: KanbanBoard }> => {
