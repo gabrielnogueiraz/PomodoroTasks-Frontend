@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Task, TaskStatus } from "../services/taskService";
 import { useTaskContext } from "./TaskProvider";
 import { useKanban } from "./useKanban";
-import { KanbanColumn, KanbanTask } from "../services/kanbanService";
+import kanbanService, { KanbanColumn, KanbanTask } from "../services/kanbanService";
 
 interface ColumnType {
   id: string;
@@ -23,7 +23,7 @@ interface SlotData {
   endTime: string;
 }
 
-export const useTasksView = (goalId: string | null) => {
+export const useTasksView = (goalId: string | null, boardId?: string | null) => {
   // Estados locais
   const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -36,7 +36,8 @@ export const useTasksView = (goalId: string | null) => {
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [selectedSlotData, setSelectedSlotData] = useState<SlotData | null>(null);
 
-  // Hook do Kanban (se goalId estiver disponível)
+  // Hook do Kanban (baseado em goalId ou boardId)
+  const kanbanHookParam = goalId || (boardId ? null : undefined);
   const { 
     board, 
     loading: kanbanLoading, 
@@ -45,7 +46,42 @@ export const useTasksView = (goalId: string | null) => {
     updateColumn,
     deleteColumn,
     moveTask: moveKanbanTask
-  } = useKanban(goalId || undefined);
+  } = useKanban(kanbanHookParam);
+  
+  // Estado para board específico (quando usando boardId)
+  const [specificBoard, setSpecificBoard] = useState<any>(null);
+  const [specificBoardLoading, setSpecificBoardLoading] = useState(false);
+  const [specificBoardError, setSpecificBoardError] = useState<string | null>(null);
+  
+  // Buscar board específico por ID quando necessário
+  useEffect(() => {
+    if (boardId && !goalId) {
+      const fetchSpecificBoard = async () => {
+        try {
+          setSpecificBoardLoading(true);
+          setSpecificBoardError(null);
+          const { board: fetchedBoard } = await kanbanService.getBoardById(boardId);
+          setSpecificBoard(fetchedBoard);
+        } catch (error) {
+          setSpecificBoardError('Erro ao carregar quadro específico');
+          console.error('Erro ao buscar quadro específico:', error);
+        } finally {
+          setSpecificBoardLoading(false);
+        }
+      };
+      
+      fetchSpecificBoard();
+    } else {
+      setSpecificBoard(null);
+      setSpecificBoardLoading(false);
+      setSpecificBoardError(null);
+    }
+  }, [boardId, goalId]);
+  
+  // Determinar qual board usar
+  const currentBoard = specificBoard || board;
+  const currentLoading = specificBoardLoading || kanbanLoading;
+  const currentError = specificBoardError || kanbanError;
   // TaskProvider para sincronização de tarefas
   const { 
     tasks: allTasks,
@@ -86,9 +122,8 @@ export const useTasksView = (goalId: string | null) => {
   ]);
   
   const [localTasks, setLocalTasks] = useState<Record<string, TaskItem>>({});
-  
-  // Verificar se deve usar Kanban do backend ou sistema local
-  const useBackendKanban = goalId && board && !kanbanError;
+    // Verificar se deve usar Kanban do backend ou sistema local
+  const useBackendKanban = (goalId && board && !kanbanError) || (boardId && specificBoard && !specificBoardError);
 
   // Função para converter KanbanColumn para ColumnType
   const convertKanbanColumn = (kanbanColumn: KanbanColumn): ColumnType => ({
@@ -125,7 +160,7 @@ export const useTasksView = (goalId: string | null) => {
     };
     
     const columnId = statusToColumn[status] || "col-1";
-    const column = columns.find(col => col.id === columnId);
+    const column = columns.find((col: ColumnType) => col.id === columnId);
     const position = column ? column.taskIds.length : 0;
     
     return { columnId, position };
@@ -135,19 +170,18 @@ export const useTasksView = (goalId: string | null) => {
   const moveTaskByStatus = async (taskId: string, status: TaskStatus) => {
     const { columnId, position } = getColumnInfoFromStatus(status);
     await moveTaskToColumnProvider(taskId, columnId, position);
-  };
-  // Colunas e tarefas derivadas para KANBAN (filtradas por goalId se estiver usando backend)
+  };  // Colunas e tarefas derivadas para KANBAN (filtradas por goalId se estiver usando backend)
   const columns = useBackendKanban 
-    ? board.columns.map(convertKanbanColumn).sort((a, b) => (a.position || 0) - (b.position || 0))
+    ? (currentBoard?.columns?.map(convertKanbanColumn).sort((a: ColumnType, b: ColumnType) => (a.position || 0) - (b.position || 0)) || [])
     : localColumns;
     
   const tasks = useBackendKanban
-    ? board.columns.reduce((acc, col) => {
-        col.tasks.forEach(task => {
+    ? (currentBoard?.columns?.reduce((acc: Record<string, TaskItem>, col: KanbanColumn) => {
+        col.tasks.forEach((task: KanbanTask) => {
           acc[task.id] = convertKanbanTask(task);
         });
         return acc;
-      }, {} as Record<string, TaskItem>)
+      }, {} as Record<string, TaskItem>) || {})
     : localTasks;
   // Tarefas para CALENDÁRIO (SEMPRE todas as tarefas do usuário, independente do goalId)
   const allTasksForCalendar = useMemo(() => 
@@ -250,11 +284,10 @@ export const useTasksView = (goalId: string | null) => {
     tasks, // Tarefas para kanban (filtradas por goalId se usando backend)
     allTasksForCalendar, // Tarefas para calendário (sempre todas)
     useBackendKanban,
-    
-    // Estados do Kanban
-    board,
-    kanbanLoading,
-    kanbanError,
+      // Estados do Kanban
+    board: currentBoard,
+    kanbanLoading: currentLoading,
+    kanbanError: currentError,
     
     // Funções do Kanban
     createColumn,
