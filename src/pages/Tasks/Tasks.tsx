@@ -18,16 +18,13 @@ const Tasks: React.FC = () => {
   const navigate = useNavigate();
   const goalIdFromUrl = searchParams.get('goalId');
   const boardIdFromUrl = searchParams.get('boardId');    // Hook para gerenciar seleção de boards
-  const boardSelector = useBoardSelector(goalIdFromUrl || boardIdFromUrl);
-  // Determinar o goalId e boardId corretos baseado no tipo do board selecionado
+  const boardSelector = useBoardSelector(goalIdFromUrl || boardIdFromUrl);  // Determinar o goalId e boardId corretos baseado no tipo do board selecionado
   const { currentGoalId, currentBoardId } = React.useMemo(() => {
     const selectedBoard = boardSelector.selectedBoard;
-    console.log('useMemo - selectedBoard changed:', selectedBoard);
     if (!selectedBoard) return { currentGoalId: null, currentBoardId: null };
     
     // Se for um quadro de meta, usar o goalId
     if (selectedBoard.type === 'goal') {
-      console.log('Using goal board:', selectedBoard.goalId);
       return { 
         currentGoalId: selectedBoard.goalId || null,
         currentBoardId: null 
@@ -35,14 +32,11 @@ const Tasks: React.FC = () => {
     }
     
     // Se for um quadro independente, usar o boardId
-    console.log('Using standalone board:', selectedBoard.boardId);
     return { 
       currentGoalId: null,
       currentBoardId: selectedBoard.boardId || null 
     };
-  }, [boardSelector.selectedBoard]);
-  
-  // Hook principal para gerenciar estado e dados
+  }, [boardSelector.selectedBoard]);  // Hook principal para gerenciar estado e dados
   const tasksView = useTasksView(currentGoalId, currentBoardId);
   
   // Hook para movimento de tarefas
@@ -85,29 +79,23 @@ const Tasks: React.FC = () => {
   });  // Atualizar URL quando board for selecionado
   React.useEffect(() => {
     const selectedBoard = boardSelector.selectedBoard;
-    console.log('useEffect - selectedBoard:', selectedBoard);
-    console.log('useEffect - goalIdFromUrl:', goalIdFromUrl);
-    console.log('useEffect - boardIdFromUrl:', boardIdFromUrl);
     
     if (!selectedBoard) return;
     
     // Para quadros de meta: usar goalId na URL
     if (selectedBoard.type === 'goal' && selectedBoard.goalId) {
       if (selectedBoard.goalId !== goalIdFromUrl) {
-        console.log('Navegando para goalId:', selectedBoard.goalId);
         navigate(`/tasks?goalId=${selectedBoard.goalId}`, { replace: true });
       }
     }
     // Para quadros independentes: usar boardId na URL
     else if (selectedBoard.type === 'standalone' && selectedBoard.boardId) {
       if (selectedBoard.boardId !== boardIdFromUrl) {
-        console.log('Navegando para boardId:', selectedBoard.boardId);
         navigate(`/tasks?boardId=${selectedBoard.boardId}`, { replace: true });
       }
     }
     // Limpar URL se não há board selecionado
     else if (!selectedBoard.goalId && !selectedBoard.boardId && (goalIdFromUrl || boardIdFromUrl)) {
-      console.log('Limpando URL');
       navigate('/tasks', { replace: true });
     }
   }, [boardSelector.selectedBoard, goalIdFromUrl, boardIdFromUrl, navigate]);
