@@ -24,8 +24,7 @@
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden; /* Remove scroll do drawer principal */
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1002; /* Maior que overlay e navbar */
   border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -78,9 +77,10 @@
 
 .content {
   flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden; /* Remove scroll do content principal */
   padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
 }
 
 
@@ -116,8 +116,8 @@
 }
 
 .boardList {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1;  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.5rem 0;
 }
 
@@ -129,6 +129,7 @@
   padding-bottom: 0.6rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   animation: slideIn 0.4s ease forwards;
+  margin-right: 0; /* Garante que o título não seja afetado pelo margin do scroll */
 }
 
 .boardItemWrapper {
@@ -265,23 +266,15 @@
   justify-content: center;
 }
 
-/* Scrollbar personalizada */
-.drawer::-webkit-scrollbar {
-  width: 6px;
+/* Scrollbar invisível para a lista de boards */
+.boardList::-webkit-scrollbar {
+  display: none; /* Para Chrome, Safari e Opera */
 }
 
-.drawer::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
-
-.drawer::-webkit-scrollbar-thumb {
-  background: rgba(106, 27, 154, 0.3);
-  border-radius: 10px;
-}
-
-.drawer::-webkit-scrollbar-thumb:hover {
-  background: rgba(106, 27, 154, 0.5);
+/* Scrollbar invisível para Firefox */
+.boardList {
+  scrollbar-width: none; /* Para Firefox */
+  -ms-overflow-style: none; /* Para Internet Explorer e Edge */
 }
 
 /* Animações */
@@ -346,6 +339,7 @@
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.05);
   animation: slideIn 0.4s ease forwards;
+  flex-shrink: 0; /* Evita que o creator seja comprimido */
 }
 
 .boardCreator:hover {
