@@ -2,11 +2,10 @@ import React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import styles from "./Tasks.module.css";
 import { useTasksView } from "../../hooks/useTasksView";
-import { useMoveTask } from "../../hooks/useMoveTask";
 import { useBoardSelector } from "../../hooks/useBoardSelector";
 import { createTaskHandlers } from "../../utils/tasksHandlers";
 import TaskFormModal from "../../components/TaskFormModal/TaskFormModal";
-import Column from "../../components/Column/Column";
+import KanbanBoard from "../../components/KanbanBoard/KanbanBoard";
 import TaskCalendar from "../../components/Calendar/Calendar";
 import ViewToggle from "../../components/ViewToggle/ViewToggle";
 import TaskDetailModal from "../../components/TaskDetailModal/TaskDetailModal";
@@ -17,8 +16,12 @@ const Tasks: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const goalIdFromUrl = searchParams.get('goalId');
-  const boardIdFromUrl = searchParams.get('boardId');    // Hook para gerenciar seleção de boards
-  const boardSelector = useBoardSelector(goalIdFromUrl || boardIdFromUrl);  // Determinar o goalId e boardId corretos baseado no tipo do board selecionado
+  const boardIdFromUrl = searchParams.get('boardId');
+
+  // Hook para gerenciar seleção de boards
+  const boardSelector = useBoardSelector(goalIdFromUrl || boardIdFromUrl);
+
+  // Determinar o goalId e boardId corretos baseado no tipo do board selecionado
   const { currentGoalId, currentBoardId } = React.useMemo(() => {
     const selectedBoard = boardSelector.selectedBoard;
     if (!selectedBoard) return { currentGoalId: null, currentBoardId: null };
@@ -36,24 +39,13 @@ const Tasks: React.FC = () => {
       currentGoalId: null,
       currentBoardId: selectedBoard.boardId || null 
     };
-  }, [boardSelector.selectedBoard]);  // Hook principal para gerenciar estado e dados
+  }, [boardSelector.selectedBoard]);
+
+  // Hook principal para gerenciar estado e dados
   const tasksView = useTasksView(currentGoalId, currentBoardId);
-  
-  // Hook para movimento de tarefas
-  const { moveTask } = useMoveTask({
-    tasks: tasksView.tasks,
-    useBackendKanban: Boolean(tasksView.useBackendKanban),
-    moveKanbanTask: tasksView.moveKanbanTask,
-    moveTaskByStatus: tasksView.moveTaskByStatus,
-    localColumns: tasksView.localColumns,
-    localTasks: tasksView.localTasks,
-    setLocalColumns: tasksView.setLocalColumns,
-    setLocalTasks: tasksView.setLocalTasks,
-    board: tasksView.board
-  });
-  
-  // Handlers para todas as ações
-  const handlers = createTaskHandlers({
+
+  // Handlers para todas as ações - MEMOIZADOS para evitar re-renders
+  const handlers = React.useMemo(() => createTaskHandlers({
     setViewMode: tasksView.setViewMode,
     setSelectedTask: tasksView.setSelectedTask,
     setActiveColumnId: tasksView.setActiveColumnId,
@@ -76,29 +68,72 @@ const Tasks: React.FC = () => {
     createColumn: tasksView.createColumn,
     updateColumn: tasksView.updateColumn,
     deleteColumn: tasksView.deleteColumn,
-  });  // Atualizar URL quando board for selecionado
+  }), [
+    tasksView.setViewMode,
+    tasksView.setSelectedTask,
+    tasksView.setActiveColumnId,
+    tasksView.setShowTaskForm,
+    tasksView.setSelectedSlotData,
+    tasksView.setIsAddingColumn,
+    tasksView.setNewColumnTitle,
+    tasksView.setLocalColumns,
+    tasksView.setLocalTasks,
+    tasksView.tasks,
+    tasksView.columns,
+    tasksView.localColumns,
+    tasksView.localTasks,
+    tasksView.useBackendKanban,
+    tasksView.board,
+    tasksView.moveTaskByStatus,
+    tasksView.fetchLocalTasks,
+    tasksView.createTaskFromProvider,
+    tasksView.deleteTaskFromProvider,
+    tasksView.createColumn,
+    tasksView.updateColumn,
+    tasksView.deleteColumn,
+  ]);
+
+  // Handlers específicos para o KanbanBoard
+  const handleTaskClick = React.useCallback((task: any) => {
+    tasksView.setSelectedTask(task);
+  }, [tasksView.setSelectedTask]);
+
+  const handleTaskDelete = React.useCallback((taskId: string) => {
+    handlers.handleDeleteTask(taskId, { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent);
+  }, [handlers]);
+
+  const handleTaskComplete = React.useCallback((taskId: string) => {
+    handlers.handleCompleteTask(taskId, { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent);
+  }, [handlers]);
+
+  // Atualizar URL quando board for selecionado - OTIMIZADO
   React.useEffect(() => {
     const selectedBoard = boardSelector.selectedBoard;
     
     if (!selectedBoard) return;
     
+    // Evitar navegações desnecessárias comparando com a URL atual
+    const currentGoalId = searchParams.get('goalId');
+    const currentBoardId = searchParams.get('boardId');
+    
     // Para quadros de meta: usar goalId na URL
     if (selectedBoard.type === 'goal' && selectedBoard.goalId) {
-      if (selectedBoard.goalId !== goalIdFromUrl) {
+      if (selectedBoard.goalId !== currentGoalId) {
         navigate(`/tasks?goalId=${selectedBoard.goalId}`, { replace: true });
       }
     }
     // Para quadros independentes: usar boardId na URL
     else if (selectedBoard.type === 'standalone' && selectedBoard.boardId) {
-      if (selectedBoard.boardId !== boardIdFromUrl) {
+      if (selectedBoard.boardId !== currentBoardId) {
         navigate(`/tasks?boardId=${selectedBoard.boardId}`, { replace: true });
       }
     }
     // Limpar URL se não há board selecionado
-    else if (!selectedBoard.goalId && !selectedBoard.boardId && (goalIdFromUrl || boardIdFromUrl)) {
+    else if (!selectedBoard.goalId && !selectedBoard.boardId && (currentGoalId || currentBoardId)) {
       navigate('/tasks', { replace: true });
     }
-  }, [boardSelector.selectedBoard, goalIdFromUrl, boardIdFromUrl, navigate]);
+  }, [boardSelector.selectedBoard, searchParams, navigate]);
+
   // Memoizar estatísticas para evitar recálculos desnecessários
   const stats = React.useMemo(() => {
     const taskValues = Object.values(tasksView.tasks);
@@ -144,7 +179,8 @@ const Tasks: React.FC = () => {
           </button>
         </div>
       </div>
-    );  }
+    );
+  }
 
   // Mostrar loading enquanto carrega dados do backend
   if (currentGoalId && tasksView.kanbanLoading) {
@@ -176,7 +212,8 @@ const Tasks: React.FC = () => {
       <div className={styles.backgroundBlob1}></div>
       <div className={styles.backgroundBlob2}></div>
       
-      <header className={styles.header}>        <div className={styles.headerLeft}>
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
           <button 
             className={styles.menuButton}
             onClick={boardSelector.toggleDrawer}
@@ -191,20 +228,25 @@ const Tasks: React.FC = () => {
                 strokeLinejoin="round"
               />
             </svg>
-          </button>          <h1>
+          </button>
+          
+          <h1>
             {boardSelector.selectedBoard?.name || 'Carregando...'}
             {boardSelector.selectedBoard?.goalTitle && (
               <span className={styles.goalSubtitle}> - {boardSelector.selectedBoard.goalTitle}</span>
             )}
           </h1>
         </div>
+        
         <div className={styles.headerCenter}>
           <ViewToggle 
             currentView={tasksView.viewMode} 
             onViewChange={handlers.handleViewChange} 
           />
         </div>
-        <div className={styles.headerRight}>          <div className={styles.statsCard}>
+        
+        <div className={styles.headerRight}>
+          <div className={styles.statsCard}>
             <div className={styles.statItem}>
               <span className={styles.statNumber}>{stats.pending}</span>
               <span className={styles.statLabel}>A fazer</span>
@@ -222,57 +264,63 @@ const Tasks: React.FC = () => {
       </header>
 
       {tasksView.viewMode === 'kanban' ? (
-        <div className={styles.board}>          {tasksView.columns.map((column: any) => (
-            <Column
-              key={column.id}
-              column={column}
-              tasks={column.taskIds
-                .map((taskId: string) => tasksView.tasks[taskId])
-                .filter((task: any) => task !== undefined)}
-              moveTask={moveTask}
-              onAddTask={handlers.handleAddTask}
-              onRenameColumn={handlers.handleRenameColumn}
-              onDeleteColumn={handlers.handleDeleteColumn}
-              onDeleteTask={handlers.handleDeleteTask}
-              onCompleteTask={handlers.handleCompleteTask}
-            />
-          ))}
+        <div className={styles.board}>
+          <KanbanBoard
+            columns={tasksView.columns}
+            tasks={tasksView.tasks}
+            boardId={currentBoardId || undefined}
+            goalId={currentGoalId || undefined}
+            onTaskMove={tasksView.handleOptimisticTaskMove}
+            onTaskClick={handleTaskClick}
+            onTaskDelete={handleTaskDelete}
+            onTaskComplete={handleTaskComplete}
+            onColumnAdd={handlers.handleAddTask}
+            onColumnUpdate={handlers.handleRenameColumn}
+            onColumnDelete={handlers.handleDeleteColumn}
+          />
+          
+          {/* Adicionar nova coluna */}
           {!tasksView.isAddingColumn ? (
-            <button className={styles.addColumnButton} onClick={handlers.handleAddColumn}>
-              <div className={styles.addColumnIcon}>+</div>
-              <span>Adicionar coluna</span>
-            </button>
+            <div className={styles.addColumnContainer}>
+              <button className={styles.addColumnButton} onClick={handlers.handleAddColumn}>
+                <div className={styles.addColumnIcon}>+</div>
+                <span>Adicionar coluna</span>
+              </button>
+            </div>
           ) : (
-            <div className={styles.newColumn}>
-              <input
-                type="text"
-                placeholder="Título da coluna"
-                value={tasksView.newColumnTitle}
-                onChange={(e) => tasksView.setNewColumnTitle(e.target.value)}
-                className={styles.newColumnInput}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') handlers.handleConfirmAddColumn(tasksView.newColumnTitle);
-                  if (e.key === 'Escape') handlers.handleCancelAddColumn();
-                }}
-              />
-              <div className={styles.newColumnActions}>
-                <button
-                  onClick={() => handlers.handleConfirmAddColumn(tasksView.newColumnTitle)}
-                  className={styles.confirmButton}
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={handlers.handleCancelAddColumn}
-                  className={styles.cancelButton}
-                >
-                  Cancelar
-                </button>
+            <div className={styles.newColumnContainer}>
+              <div className={styles.newColumn}>
+                <input
+                  type="text"
+                  placeholder="Título da coluna"
+                  value={tasksView.newColumnTitle}
+                  onChange={(e) => tasksView.setNewColumnTitle(e.target.value)}
+                  className={styles.newColumnInput}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handlers.handleConfirmAddColumn(tasksView.newColumnTitle);
+                    if (e.key === 'Escape') handlers.handleCancelAddColumn();
+                  }}
+                />
+                <div className={styles.newColumnActions}>
+                  <button
+                    onClick={() => handlers.handleConfirmAddColumn(tasksView.newColumnTitle)}
+                    className={styles.confirmButton}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={handlers.handleCancelAddColumn}
+                    className={styles.cancelButton}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             </div>
           )}
-        </div>      ) : (
+        </div>
+      ) : (
         <TaskCalendar
           key={tasksView.calendarKey}
           tasks={tasksView.allTasksForCalendar}
@@ -293,7 +341,9 @@ const Tasks: React.FC = () => {
           }
           initialData={tasksView.selectedSlotData || undefined}
         />
-      )}      {tasksView.selectedTask && (
+      )}
+
+      {tasksView.selectedTask && (
         <TaskDetailModal
           task={tasksView.selectedTask}
           onClose={handlers.handleCloseTaskDetail}
@@ -301,7 +351,9 @@ const Tasks: React.FC = () => {
           onDelete={handlers.handleDeleteTaskFromDetail}
           onComplete={handlers.handleCompleteTaskFromDetail}
         />
-      )}      {/* Menu lateral para seleção de quadros */}
+      )}
+
+      {/* Menu lateral para seleção de quadros */}
       <BoardDrawer
         isOpen={boardSelector.isDrawerOpen}
         onClose={boardSelector.closeDrawer}
