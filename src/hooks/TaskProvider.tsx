@@ -49,14 +49,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log(`Notificando evento: ${eventType}`, data);
     window.dispatchEvent(new CustomEvent(eventType, { detail: data }));
   }, []);
-
   const refreshTasks = async () => {
     try {
       console.log("Refreshing tasks...");
-      const allTasks = await taskService.getTasks();
-      const activeTasks = allTasks.filter(task => task.status !== 'cancelled');
+      const response = await taskService.getTasks();
       
-      console.log(`Loaded ${activeTasks.length} active tasks`);
+      // Garantir que temos um array válido
+      const allTasks = Array.isArray(response) ? response : [];
+      const activeTasks = allTasks.filter(task => task && task.status !== 'cancelled');
+      
+      console.log(`Loaded ${activeTasks.length} active tasks from ${allTasks.length} total`);
       setTasks(activeTasks);
       
       // Disparar evento para notificar outros componentes sobre a atualização
@@ -64,6 +66,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
       return activeTasks;
     } catch (error) {
       console.error("Erro ao carregar tarefas:", error);
+      setTasks([]); // Garantir que sempre temos um array
       return [];
     }
   };
