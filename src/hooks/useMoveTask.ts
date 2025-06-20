@@ -26,8 +26,7 @@ export const useMoveTask = (config: MoveTaskConfig) => {
     setLocalTasks,
     board
   } = config;
-
-  // Função para mover tarefas entre colunas
+  // Função otimizada para mover tarefas entre colunas com UI otimista
   const moveTask = useCallback(
     async (taskId: string, fromColumnId: string, toColumnId: string) => {
       try {
@@ -37,7 +36,53 @@ export const useMoveTask = (config: MoveTaskConfig) => {
           return;
         }
 
-        console.log(`Movendo tarefa ${taskId} de ${fromColumnId} para ${toColumnId}`);        if (useBackendKanban && moveKanbanTask) {
+        console.log(`Movendo tarefa ${taskId} de ${fromColumnId} para ${toColumnId}`);        // 1. ATUALIZAR INTERFACE IMEDIATAMENTE (UI Otimista)
+        if (!useBackendKanban) {
+          // Atualizar estado local imediatamente para feedback visual
+          const updatedColumns = localColumns.map((column) => {
+            // Remover o ID da tarefa de todas as colunas
+            const filteredTaskIds = column.taskIds.filter((id: string) => id !== taskId);
+
+            // Adicionar o ID da tarefa apenas à coluna de destino
+            if (column.id === toColumnId) {
+              return {
+                ...column,
+                taskIds: [...filteredTaskIds, taskId],
+              };
+            }
+
+            return {
+              ...column,
+              taskIds: filteredTaskIds,
+            };
+          });
+
+          // Determinar o novo status com base na coluna de destino
+          let newStatus: TaskStatus;
+          if (toColumnId === "col-1") {
+            newStatus = "pending";
+          } else if (toColumnId === "col-2") {
+            newStatus = "in_progress";
+          } else {
+            newStatus = "completed";
+          }
+
+          const updatedTasks = {
+            ...localTasks,
+            [taskId]: {
+              ...task,
+              status: newStatus,
+              columnId: toColumnId,
+            },
+          };
+
+          // Aplicar mudanças imediatamente na UI
+          setLocalColumns(updatedColumns);
+          setLocalTasks(updatedTasks);
+        }
+
+        // 2. SINCRONIZAR COM BACKEND
+        if (useBackendKanban && moveKanbanTask) {
           try {
             // Validar board e colunas antes de prosseguir
             if (!board || !board.columns) {
@@ -65,14 +110,18 @@ export const useMoveTask = (config: MoveTaskConfig) => {
               columnId: toColumnId,
               position: position
             });
+              console.log("Move task chamado com sucesso via API");
             
-            console.log("Move task chamado com sucesso via API");
+            // NÃO disparar evento customizado - deixar o backend/useKanban detectar automaticamente
+            // Isso evita loops infinitos de atualizações
+            console.log("Movimentação concluída - aguardando detecção automática do sistema");
+            
           } catch (error) {
             console.error("Erro ao mover tarefa via Kanban:", error);
-            // Falhar para o modo local como fallback
             throw error; // Repassar erro para ser tratado no catch externo
           }
         } else {
+          // Para modo local, usar TaskProvider para persistir mudanças
           // Determinar o novo status com base na coluna de destino
           let newStatus: TaskStatus;
           if (toColumnId === "col-1") {
@@ -83,40 +132,9 @@ export const useMoveTask = (config: MoveTaskConfig) => {
             newStatus = "completed";
           }
 
-          // Usar TaskProvider para mover tarefa
+          // Usar TaskProvider para mover tarefa (isso já atualiza o backend)
           await moveTaskByStatus(taskId, newStatus);
-          
-          // Atualizar estado local
-          const updatedColumns = localColumns.map((column) => {
-            // Remover o ID da tarefa de todas as colunas
-            const filteredTaskIds = column.taskIds.filter((id) => id !== taskId);
-
-            // Adicionar o ID da tarefa apenas à coluna de destino
-            if (column.id === toColumnId) {
-              return {
-                ...column,
-                taskIds: [...filteredTaskIds, taskId],
-              };
-            }
-
-            return {
-              ...column,
-              taskIds: filteredTaskIds,
-            };
-          });
-
-          // Atualizar a tarefa local
-          const updatedTasks = {
-            ...localTasks,
-            [taskId]: {
-              ...task,
-              status: newStatus,
-              columnId: toColumnId,
-            },
-          };
-
-          setLocalColumns(updatedColumns);
-          setLocalTasks(updatedTasks);
+          console.log("Tarefa movida via TaskProvider");
         }
 
         console.log("Tarefa movida com sucesso");      } catch (error) {
@@ -138,9 +156,8 @@ export const useMoveTask = (config: MoveTaskConfig) => {
             }
 
             // Atualizar estado local manualmente
-            const updatedColumns = localColumns.map((column) => {
-              // Remover o ID da tarefa de todas as colunas
-              const filteredTaskIds = column.taskIds.filter((id) => id !== taskId);
+            const updatedColumns = localColumns.map((column) => {              // Remover o ID da tarefa de todas as colunas
+              const filteredTaskIds = column.taskIds.filter((id: string) => id !== taskId);
 
               // Adicionar o ID da tarefa apenas à coluna de destino
               if (column.id === toColumnId) {
