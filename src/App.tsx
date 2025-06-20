@@ -6,8 +6,6 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Tasks from "./pages/Tasks/Tasks";
 import Login from "./pages/Login/Login";
@@ -113,15 +111,13 @@ const AppRoutes: React.FC = () => {
 
 function App() {
   return (
-    <DndProvider backend={HTML5Backend}>
-      <Router>
-        <AuthProvider>
-          <TaskProvider>
-            <AppRoutes />
-          </TaskProvider>
-        </AuthProvider>
-      </Router>
-    </DndProvider>
+    <Router>
+      <AuthProvider>
+        <TaskProvider>
+          <AppRoutes />
+        </TaskProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
