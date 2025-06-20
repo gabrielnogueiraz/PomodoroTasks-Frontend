@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Task, TaskStatus } from "../services/taskService";
 import { useTaskContext } from "./TaskProvider";
 import { useKanban } from "./useKanban";
 import { useRealtimeSync } from "./useRealtimeSync";
 import kanbanService, { KanbanColumn, KanbanTask } from "../services/kanbanService";
 
-interface ColumnType {
+export interface ColumnType {
   id: string;
   title: string;
   taskIds: string[];
@@ -13,11 +13,11 @@ interface ColumnType {
   position?: number;
 }
 
-interface TaskItem extends Task {
+export interface TaskItem extends Task {
   columnId: string;
 }
 
-interface SlotData {
+export interface SlotData {
   startDate: string;
   startTime: string;
   endDate: string;
@@ -37,6 +37,15 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [selectedSlotData, setSelectedSlotData] = useState<SlotData | null>(null);
 
+  // Refs para controlar atualizações e evitar loops
+  const lastGoalIdRef = useRef<string | null>(goalId);
+  const lastBoardIdRef = useRef<string | null>(boardId || null);
+  const lastTasksCountRef = useRef<number>(0);
+  const isUpdatingRef = useRef(false);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncTimestamp = useRef<number>(0);
+
   // Hook do Kanban (baseado em goalId ou boardId)
   const kanbanHookParam = goalId || (boardId ? null : undefined);
   const { 
@@ -53,43 +62,97 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
   const [specificBoard, setSpecificBoard] = useState<any>(null);
   const [specificBoardLoading, setSpecificBoardLoading] = useState(false);
   const [specificBoardError, setSpecificBoardError] = useState<string | null>(null);
+
+  // Buscar board específico por ID quando necessário - otimizado com cache
+  const lastBoardFetchRef = useRef<{ boardId: string | null; timestamp: number } | null>(null);
+  const BOARD_CACHE_DURATION = 30000; // 30 segundos de cache
   
-  // Buscar board específico por ID quando necessário
   useEffect(() => {
-    if (boardId && !goalId) {
-      const fetchSpecificBoard = async () => {
-        try {
-          setSpecificBoardLoading(true);
-          setSpecificBoardError(null);
-          const { board: fetchedBoard } = await kanbanService.getBoardById(boardId);
-          setSpecificBoard(fetchedBoard);
-        } catch (error) {
-          setSpecificBoardError('Erro ao carregar quadro específico');
-          console.error('Erro ao buscar quadro específico:', error);
-        } finally {
+    // Debounce para evitar múltiplas chamadas ao trocar boards rapidamente
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    syncTimeoutRef.current = setTimeout(() => {
+      if (boardId && !goalId) {
+        // Verificar se já buscamos este board recentemente
+        const now = Date.now();
+        const lastFetch = lastBoardFetchRef.current;
+        
+        if (lastFetch && 
+            lastFetch.boardId === boardId && 
+            (now - lastFetch.timestamp) < BOARD_CACHE_DURATION) {
+          console.log(`Board ${boardId} ainda em cache, pulando busca`);
+          return;
+        }
+        
+        const fetchSpecificBoard = async () => {
+          try {
+            setSpecificBoardLoading(true);
+            setSpecificBoardError(null);
+            console.log(`Buscando board específico: ${boardId}`);
+            
+            const { board: fetchedBoard } = await kanbanService.getBoardById(boardId);
+            // Normalizar o board para garantir que columns seja sempre um array
+            const normalizedBoard = fetchedBoard ? {
+              ...fetchedBoard,
+              columns: (fetchedBoard.columns && Array.isArray(fetchedBoard.columns)) ? fetchedBoard.columns : []
+            } : null;
+            
+            setSpecificBoard(normalizedBoard);
+            console.log(`Board específico carregado: ${normalizedBoard?.name}`);
+            
+            // Atualizar cache
+            lastBoardFetchRef.current = { boardId, timestamp: now };
+            
+          } catch (error) {
+            setSpecificBoardError('Erro ao carregar quadro específico');
+            console.error('Erro ao buscar quadro específico:', error);
+          } finally {
+            setSpecificBoardLoading(false);
+          }
+        };
+        
+        fetchSpecificBoard();
+      } else {
+        // Limpar board específico quando não for necessário - somente se necessário
+        if (specificBoard !== null) {
+          setSpecificBoard(null);
+          lastBoardFetchRef.current = null;
+        }
+        if (specificBoardLoading) {
           setSpecificBoardLoading(false);
         }
-      };
-      
-      fetchSpecificBoard();
-    } else {
-      setSpecificBoard(null);
-      setSpecificBoardLoading(false);
-      setSpecificBoardError(null);
-    }
-  }, [boardId, goalId]);
-  
-  // Determinar qual board usar
-  const currentBoard = specificBoard || board;
+        if (specificBoardError) {
+          setSpecificBoardError(null);
+        }
+      }
+    }, 200); // Debounce de 200ms para evitar múltiplas requisições ao trocar boards
+  }, [boardId, goalId]); // Dependências mínimas
+
+  // Determinar qual board usar e normalizar
+  const currentBoard = useMemo(() => {
+    const selectedBoard = specificBoard || board;
+    if (!selectedBoard) return null;
+    
+    // Garantir que columns seja sempre um array
+    return {
+      ...selectedBoard,
+      columns: (selectedBoard.columns && Array.isArray(selectedBoard.columns)) ? selectedBoard.columns : []
+    };
+  }, [specificBoard, board]);
+
   const currentLoading = specificBoardLoading || kanbanLoading;
   const currentError = specificBoardError || kanbanError;
+
   // TaskProvider para sincronização de tarefas
   const { 
     tasks: allTasks,
     createTask: createTaskFromProvider,
     deleteTask: deleteTaskFromProvider,
     moveTaskToColumn: moveTaskToColumnProvider
-  } = useTaskContext();  // Wrapper para createTask que inclui goalId ou boardId
+  } = useTaskContext();
+  // Wrapper para createTask que inclui goalId ou boardId - CORRIGIDO
   const createTaskFromProviderWithGoal = useCallback(async (
     title: string,
     priority: "low" | "medium" | "high",
@@ -100,7 +163,11 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
     endTime?: string,
     columnId?: string
   ) => {
-    await createTaskFromProvider(
+    console.log("createTaskFromProviderWithGoal chamado:", {
+      title, priority, columnId, goalId, boardId
+    });
+    
+    const result = await createTaskFromProvider(
       title,
       priority,
       description,
@@ -112,6 +179,9 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
       goalId || undefined,
       boardId || undefined
     );
+    
+    console.log("Tarefa criada com goalId/boardId:", result);
+    return result;
   }, [createTaskFromProvider, goalId, boardId]);
   
   // Estados locais para fallback (quando não há backend Kanban)
@@ -121,14 +191,16 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
     { id: "col-3", title: "Concluído", taskIds: [], color: "#e8f5e9", position: 2 },
   ]);
   
-  const [localTasks, setLocalTasks] = useState<Record<string, TaskItem>>({});  // Verificar se deve usar Kanban do backend ou sistema local
+  const [localTasks, setLocalTasks] = useState<Record<string, TaskItem>>({});
+
+  // Verificar se deve usar Kanban do backend ou sistema local
   const useBackendKanban = (goalId && board && !kanbanError) || (boardId && specificBoard && !specificBoardError);
 
   // Função para converter KanbanColumn para ColumnType
   const convertKanbanColumn = (kanbanColumn: KanbanColumn): ColumnType => ({
     id: kanbanColumn.id,
     title: kanbanColumn.name,
-    taskIds: kanbanColumn.tasks.map(t => t.id),
+    taskIds: (kanbanColumn.tasks && Array.isArray(kanbanColumn.tasks)) ? kanbanColumn.tasks.map(t => t.id) : [],
     color: kanbanColumn.color,
     position: kanbanColumn.position
   });
@@ -159,8 +231,8 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
     };
     
     const columnId = statusToColumn[status] || "col-1";
-    const column = columns.find((col: ColumnType) => col.id === columnId);
-    const position = column ? column.taskIds.length : 0;
+    const column = (columns && Array.isArray(columns)) ? columns.find((col: ColumnType) => col.id === columnId) : null;
+    const position = column && column.taskIds ? column.taskIds.length : 0;
     
     return { columnId, position };
   };
@@ -169,275 +241,341 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
   const moveTaskByStatus = async (taskId: string, status: TaskStatus) => {
     const { columnId, position } = getColumnInfoFromStatus(status);
     await moveTaskToColumnProvider(taskId, columnId, position);
-  };  // Colunas e tarefas derivadas para KANBAN (filtradas por goalId se estiver usando backend)
+  };
+
+  // Colunas e tarefas derivadas para KANBAN (filtradas por goalId se estiver usando backend)
   const columns = useBackendKanban 
-    ? (currentBoard?.columns?.map(convertKanbanColumn)?.sort((a: ColumnType, b: ColumnType) => (a.position || 0) - (b.position || 0)) || [])
+    ? (currentBoard?.columns && Array.isArray(currentBoard.columns)
+        ? currentBoard.columns.map(convertKanbanColumn).sort((a: ColumnType, b: ColumnType) => (a.position || 0) - (b.position || 0))
+        : [])
     : localColumns;
     
   const tasks = useBackendKanban
-    ? (currentBoard?.columns?.reduce((acc: Record<string, TaskItem>, col: KanbanColumn) => {
-        col.tasks?.forEach((task: KanbanTask) => {
-          acc[task.id] = convertKanbanTask(task);
-        });
-        return acc;
-      }, {} as Record<string, TaskItem>) || {})
+    ? (currentBoard?.columns && Array.isArray(currentBoard.columns)
+        ? currentBoard.columns.reduce((acc: Record<string, TaskItem>, col: KanbanColumn) => {
+            if (col.tasks && Array.isArray(col.tasks)) {
+              col.tasks.forEach((task: KanbanTask) => {
+                acc[task.id] = convertKanbanTask(task);
+              });
+            }
+            return acc;
+          }, {} as Record<string, TaskItem>)
+        : {})
     : localTasks;
+
   // Tarefas para CALENDÁRIO (SEMPRE todas as tarefas do usuário, independente do goalId)
   const allTasksForCalendar = useMemo(() => 
     allTasks.map(task => ({
       ...task,
       columnId: task.columnId || 'col-1' // fallback para columnId
     }))
-  , [allTasks]);  // Função para carregar tarefas locais (fallback quando não há Kanban do backend)
+  , [allTasks]);
+
+  // Função otimizada para buscar e processar tarefas locais - THROTTLED
   const fetchLocalTasks = useCallback(async () => {
-    console.log("fetchLocalTasks called", { useBackendKanban, goalId, boardId });
-    
+    // Throttle severo para evitar múltiplas execuções
+    const now = Date.now();
+    if (isUpdatingRef.current || (now - lastSyncTimestamp.current) < 2000) {
+      console.log("fetchLocalTasks: Throttle ativo ou já atualizando");
+      return;
+    }
+
+    isUpdatingRef.current = true;
+    lastSyncTimestamp.current = now;
+
     try {
-      // Se estamos usando backend Kanban e temos um quadro carregado, sincronize suas tarefas
+      console.log(`fetchLocalTasks: Iniciando (useBackendKanban: ${useBackendKanban})`);
+
+      // Se usando backend Kanban, não processar tarefas locais
       if (useBackendKanban && currentBoard) {
-        console.log("Usando backend Kanban com quadro já carregado");
-        return; // O quadro já será atualizado através dos eventos de sincronização
+        console.log("fetchLocalTasks: Backend Kanban ativo - pulando processamento local");
+        return;
       }
+
+      // Verificar se mudou algo significativo - OTIMIZADO
+      const contextChanged = lastGoalIdRef.current !== goalId || lastBoardIdRef.current !== (boardId || null);
+      const tasksCountChanged = lastTasksCountRef.current !== allTasks.length;
       
-      // Filtrar tarefas baseado no contexto atual  
-      let filteredTasks = allTasks;
-      
-      if (goalId) {
-        // Para quadros de meta, filtrar por goalId
-        console.log(`Filtrando tarefas por goalId: ${goalId}`);
-        filteredTasks = allTasks.filter(task => task.goalId === goalId);
-      } else if (boardId) {
-        // Para quadros independentes, filtrar por boardId
-        console.log(`Filtrando tarefas por boardId: ${boardId}`);
-        filteredTasks = allTasks.filter(task => task.boardId === boardId);
-      } else {
-        // Se não há goalId nem boardId, usar todas as tarefas sem meta/quadro específico
-        console.log("Usando tarefas sem meta/quadro específico");
-        filteredTasks = allTasks.filter(task => !task.goalId && !task.boardId);
+      if (!contextChanged && !tasksCountChanged) {
+        console.log("fetchLocalTasks: Nenhuma mudança detectada, pulando");
+        return;
       }
-      
-      console.log(`Encontradas ${filteredTasks.length} tarefas filtradas`);
-      
-      // Criar mapa de tarefas locais baseado nas tarefas filtradas
+
+      // Atualizar referências de controle
+      lastGoalIdRef.current = goalId;
+      lastBoardIdRef.current = boardId || null;
+      lastTasksCountRef.current = allTasks.length;
+
+      console.log(`Processando ${allTasks.length} tarefas para goalId: ${goalId}, boardId: ${boardId}`);      // Filtrar tarefas baseado no contexto - CORRIGIDO para garantir separação por quadro
+      const filteredTasks = (() => {
+        if (goalId) {
+          // Se há goalId, mostrar apenas tarefas deste objetivo específico
+          return allTasks.filter(task => task.goalId === goalId);
+        } else if (boardId) {
+          // Se há boardId, mostrar apenas tarefas deste quadro específico
+          return allTasks.filter(task => task.boardId === boardId);
+        } else {
+          // Se não há contexto específico, mostrar tarefas sem goalId e sem boardId (tarefas gerais)
+          return allTasks.filter(task => !task.goalId && !task.boardId);
+        }
+      })();
+
       const taskMap: Record<string, TaskItem> = {};
-      const columnMap: Record<string, ColumnType> = {
-        "col-1": { id: "col-1", title: "A fazer", taskIds: [], color: "#e3f2fd", position: 0 },
-        "col-2": { id: "col-2", title: "Em progresso", taskIds: [], color: "#fff3e0", position: 1 },
-        "col-3": { id: "col-3", title: "Concluído", taskIds: [], color: "#e8f5e9", position: 2 }
+      const columnTaskIds: Record<string, string[]> = {
+        "col-1": [],
+        "col-2": [],
+        "col-3": []
       };
 
-      // Distribuir as tarefas filtradas nas colunas corretas
+      // Processar tarefas uma única vez
       filteredTasks.forEach((task) => {
-        if (task.status === "cancelled") {
-          return;
-        }
+        if (task.status === "cancelled") return;
 
-        // Determinar a coluna correta com base no columnId existente ou status
         let columnId = task.columnId || "col-1";
         
-        // Se não tiver columnId definido, use o status para determinar
+        // Mapear status para coluna se não houver columnId
         if (!task.columnId) {
-          if (task.status === "in_progress") {
-            columnId = "col-2";
-          } else if (task.status === "completed") {
-            columnId = "col-3";
-          }
+          if (task.status === "in_progress") columnId = "col-2";
+          else if (task.status === "completed") columnId = "col-3";
         }
 
-        // Se columnId não for uma das colunas padrão, verifica se é necessário criar
-        if (!columnMap[columnId]) {
-          // Criar coluna sob demanda se não existir
-          columnMap[columnId] = { 
-            id: columnId, 
-            title: `Coluna ${Object.keys(columnMap).length + 1}`, 
-            taskIds: [], 
-            color: "#f0f4c3", 
-            position: Object.keys(columnMap).length 
-          };
+        // Garantir que a coluna existe
+        if (!columnTaskIds[columnId]) {
+          columnTaskIds[columnId] = [];
         }
 
-        // Adicionar o ID da tarefa à coluna adequada
-        columnMap[columnId].taskIds.push(task.id);
-
-        // Adicionar ao mapa de tarefas
+        columnTaskIds[columnId].push(task.id);
         taskMap[task.id] = { ...task, columnId };
       });
 
-      // Converter o mapa de volta para um array de colunas
-      const updatedColumns = Object.values(columnMap)
-        .sort((a, b) => (a.position || 0) - (b.position || 0));
+      // Criar colunas com IDs de tarefas atualizados
+      const updatedColumns: ColumnType[] = [
+        { id: "col-1", title: "A fazer", taskIds: columnTaskIds["col-1"], color: "#e3f2fd", position: 0 },
+        { id: "col-2", title: "Em progresso", taskIds: columnTaskIds["col-2"], color: "#fff3e0", position: 1 },
+        { id: "col-3", title: "Concluído", taskIds: columnTaskIds["col-3"], color: "#e8f5e9", position: 2 }
+      ];
 
-      console.log("Atualizando colunas locais:", updatedColumns);
-      console.log("Atualizando tarefas locais:", Object.keys(taskMap).length);
+      console.log(`Atualizando: ${Object.keys(taskMap).length} tarefas, ${updatedColumns.length} colunas`);
 
-      // Atualizar os estados locais
-      setLocalTasks(taskMap);
-      setLocalColumns(updatedColumns);
+      // ATUALIZAÇÃO ATÔMICA - evita re-renders múltiplos
+      setLocalTasks(prevTasks => {
+        // Comparação ultra-otimizada
+        const currentTaskIds = Object.keys(taskMap).sort().join(',');
+        const prevTaskIds = Object.keys(prevTasks).sort().join(',');
+        
+        if (currentTaskIds !== prevTaskIds) {
+          console.log("Tasks IDs changed - updating");
+          return taskMap;
+        }
+        
+        // Verificar se conteúdo mudou
+        const contentChanged = Object.keys(taskMap).some(id => 
+          JSON.stringify(taskMap[id]) !== JSON.stringify(prevTasks[id])
+        );
+        
+        return contentChanged ? taskMap : prevTasks;
+      });
+      
+      setLocalColumns(prevColumns => {
+        // Comparação específica para colunas
+        const currentState = updatedColumns.map(col => `${col.id}:${col.taskIds.length}:${col.taskIds.join(',')}`).join('|');
+        const prevState = prevColumns.map(col => `${col.id}:${col.taskIds.length}:${col.taskIds.join(',')}`).join('|');
+        
+        if (currentState !== prevState) {
+          console.log("Columns changed - updating");
+          return updatedColumns;
+        }
+        
+        return prevColumns;
+      });
+
+      console.log("fetchLocalTasks: Concluído com sucesso");
     } catch (error) {
-      console.error("Erro ao carregar tarefas locais:", error);
+      console.error("Erro em fetchLocalTasks:", error);
+    } finally {
+      isUpdatingRef.current = false;
     }
-  }, [allTasks, useBackendKanban, goalId, boardId, currentBoard]);// Effect para carregar tarefas inicialmente
-  useEffect(() => {
-    fetchLocalTasks();
-  }, [fetchLocalTasks]);
+  }, [allTasks, useBackendKanban, goalId, boardId, currentBoard]);
+  // Função otimizada de movimentação de tarefas - APENAS ATUALIZAÇÃO LOCAL
+  const handleOptimisticTaskMove = useCallback((
+    taskId: string, 
+    sourceColumnId: string, 
+    destinationColumnId: string, 
+    position: number
+  ) => {
+    console.log('Optimistic task move:', { taskId, sourceColumnId, destinationColumnId, position });
+    
+    if (useBackendKanban) {
+      // Para backend Kanban, fazer atualização otimística local também
+      console.log('Backend Kanban - updating local state optimistically');
+      
+      // Atualizar o board local imediatamente para feedback visual
+      if (currentBoard) {
+        const updatedBoard = { ...currentBoard };
+        updatedBoard.columns = updatedBoard.columns.map((col: KanbanColumn) => {
+          if (col.id === sourceColumnId) {
+            return {
+              ...col,
+              tasks: (col.tasks && Array.isArray(col.tasks)) ? col.tasks.filter((task: KanbanTask) => task.id !== taskId) : []
+            };
+          }
+          if (col.id === destinationColumnId) {
+            const taskToMove = currentBoard.columns
+              .find((c: KanbanColumn) => c.id === sourceColumnId)
+              ?.tasks?.find((t: KanbanTask) => t.id === taskId);
+            
+            if (taskToMove) {
+              const existingTasks = (col.tasks && Array.isArray(col.tasks)) ? col.tasks : [];
+              const newTasks = [...existingTasks];
+              const updatedTask = { ...taskToMove, columnId: destinationColumnId };
+              newTasks.splice(position, 0, updatedTask);
+              return {
+                ...col,
+                tasks: newTasks
+              };
+            }
+          }
+          return col;
+        });
+        
+        // Atualizar o board específico se for o caso
+        if (boardId) {
+          setSpecificBoard(updatedBoard);
+        }
+      }
+      
+      // NÃO CHAMA O BACKEND AQUI - isso é responsabilidade do KanbanBoard
+    } else {
+      // Sistema local: APENAS atualização local otimística
+      console.log('Local system - updating local state optimistically');
+      
+      // Atualizar colunas locais
+      const updatedColumns = localColumns.map(column => {
+        const newTaskIds = [...column.taskIds];
+        
+        // Remove da coluna origem
+        if (column.id === sourceColumnId) {
+          const taskIndex = newTaskIds.indexOf(taskId);
+          if (taskIndex > -1) {
+            newTaskIds.splice(taskIndex, 1);
+          }
+        }
+        
+        // Adiciona na coluna destino
+        if (column.id === destinationColumnId) {
+          newTaskIds.splice(position, 0, taskId);
+        }
+        
+        return { ...column, taskIds: newTaskIds };
+      });
+      
+      // Atualizar tarefa com nova coluna
+      const updatedTasks = {
+        ...localTasks,
+        [taskId]: {
+          ...localTasks[taskId],
+          columnId: destinationColumnId
+        }
+      };
+      
+      setLocalColumns(updatedColumns);
+      setLocalTasks(updatedTasks);
+      
+      // Chamar provider para sincronizar com backend (SEM fetchLocalTasks)
+      moveTaskToColumnProvider(taskId, destinationColumnId, position);
+    }
+  }, [useBackendKanban, currentBoard, boardId, localColumns, localTasks, moveTaskToColumnProvider]);
 
-  // Hook para sincronização em tempo real
+  // Effect SIMPLIFICADO para carregar tarefas inicialmente - SEM DEPENDÊNCIA CIRCULAR
+  useEffect(() => {
+    // Debounce para evitar múltiplas execuções rapidamente
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      // Apenas executar quando o contexto realmente mudar
+      const contextChanged = lastGoalIdRef.current !== goalId || lastBoardIdRef.current !== (boardId || null);
+      
+      if (contextChanged) {
+        console.log("useTasksView: Contexto mudou", { goalId, boardId });
+        fetchLocalTasks();
+      }
+    }, 300); // Debounce de 300ms
+  }, [goalId, boardId]); // Dependências mínimas
+
+  // Cleanup de todos os timeouts quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Hook para sincronização SIMPLIFICADA - evita loops infinitos
   useRealtimeSync({
     onTasksRefreshed: () => {
-      console.log("useTasksView: onTasksRefreshed - fetching local tasks and refreshing view");
-      fetchLocalTasks();
-      if (viewMode === 'calendar') {
-        setCalendarKey(prev => prev + 1);
+      console.log("useTasksView: onTasksRefreshed");
+      if (!useBackendKanban) {
+        fetchLocalTasks();
       }
     },
     onTaskCreated: (task) => {
-      console.log("useTasksView: onTaskCreated - fetching local tasks", task);
-      fetchLocalTasks();
-      if (viewMode === 'calendar') {
-        setCalendarKey(prev => prev + 1);
-      }
-    },
-    onTaskUpdated: (task) => {
-      console.log("useTasksView: onTaskUpdated - fetching local tasks", task);
-      fetchLocalTasks();
-      if (viewMode === 'calendar') {
-        setCalendarKey(prev => prev + 1);
-      }
-    },
-    onTaskDeleted: (taskId) => {
-      console.log("useTasksView: onTaskDeleted - fetching local tasks", taskId);
-      fetchLocalTasks();
-      if (viewMode === 'calendar') {
-        setCalendarKey(prev => prev + 1);
-      }
-    },    onTaskMoved: (detail) => {
-      console.log("useTasksView: onTaskMoved - refreshing board data", detail);
+      console.log("useTasksView: onTaskCreated", task?.id);
+      // Verificar relevância antes de atualizar
+      const isRelevant = (!goalId && !boardId) || 
+                        (goalId && task?.goalId === goalId) ||
+                        (boardId && task?.boardId === boardId);
       
-      try {
-        if (!detail || !detail.taskId || !detail.columnId) {
-          console.warn("useTasksView: onTaskMoved recebeu dados incompletos", detail);
-          return;
-        }
+      if (isRelevant && !useBackendKanban) {
+        fetchLocalTasks();
+      }
+    },
+    onTaskMoved: (detail) => {
+      console.log("useTasksView: onTaskMoved", detail?.taskId);
+      
+      // CRUCIAL: Para backend Kanban, NÃO disparar fetchLocalTasks
+      if (useBackendKanban && currentBoard) {
+        // Apenas aguardar - o useKanban detectará automaticamente
+        console.log("useTasksView: Backend Kanban - aguardando detecção automática");
         
-        if (useBackendKanban && currentBoard) {
-          // Realizar uma atualização segura do board para refletir a mudança
-          try {
-            if (goalId) {
-              console.log(`useTasksView: Recarregando board para goalId ${goalId} após movimentação de tarefa`);
-              kanbanService.getBoardByGoal(goalId)
-                .then(({ board: updatedBoard }) => {
-                  if (updatedBoard) {
-                    console.log("useTasksView: Board atualizado com sucesso após movimentação");
-                    setSpecificBoard(null); // Limpar qualquer board específico
-                  } else {
-                    console.warn("useTasksView: Não foi possível obter board atualizado");
-                  }
-                })
-                .catch(error => {
-                  console.error("useTasksView: Erro ao recarregar board por goal:", error);
-                  // Tentar fallback para local tasks
-                  fetchLocalTasks();
-                });
-            } else if (boardId) {
-              console.log(`useTasksView: Recarregando board para boardId ${boardId} após movimentação de tarefa`);
-              kanbanService.getBoardById(boardId)
-                .then(({ board: updatedBoard }) => {
-                  if (updatedBoard) {
-                    console.log("useTasksView: Board específico atualizado com sucesso após movimentação");
-                    setSpecificBoard(updatedBoard);
-                  } else {
-                    console.warn("useTasksView: Não foi possível obter board específico atualizado");
-                  }
-                })
-                .catch(error => {
-                  console.error("useTasksView: Erro ao recarregar board específico:", error);
-                  // Tentar fallback para local tasks
-                  fetchLocalTasks();
-                });
-            }
-          } catch (error) {
-            console.error("useTasksView: Erro ao tentar recarregar board após movimentação:", error);
-            fetchLocalTasks();
-          }
-        } else {
-          // Atualização local para quando não há backend Kanban
-          console.log("useTasksView: Atualizando tarefas locais após movimentação");
+        // Se necessário recarregar board específico (apenas uma vez)
+        if (boardId && !syncTimeoutRef.current) {
+          syncTimeoutRef.current = setTimeout(() => {
+            kanbanService.getBoardById(boardId)
+              .then(({ board: updatedBoard }) => {
+                if (updatedBoard) {
+                  // Normalizar o board recarregado
+                  const normalizedBoard = {
+                    ...updatedBoard,
+                    columns: (updatedBoard.columns && Array.isArray(updatedBoard.columns)) ? updatedBoard.columns : []
+                  };
+                  setSpecificBoard(normalizedBoard);
+                  console.log("useTasksView: Board específico recarregado");
+                }
+              })
+              .catch(console.error)
+              .finally(() => {
+                syncTimeoutRef.current = null;
+              });
+          }, 2000); // Delay longo para evitar múltiplas chamadas
+        }
+      } else {
+        // Para sistema local, atualizar normalmente
+        if (!useBackendKanban) {
           fetchLocalTasks();
         }
-        
-        if (viewMode === 'calendar') {
-          console.log("useTasksView: Atualizando calendário após movimentação de tarefa");
-          setCalendarKey(prev => prev + 1);
-        }
-      } catch (error) {
-        console.error("useTasksView: Erro geral ao processar onTaskMoved:", error);
-        // Tentar recuperar o estado
-        fetchLocalTasks();
-      }
-    },
-    onColumnCreated: (column) => {
-      console.log("useTasksView: onColumnCreated - refreshing board data", column);
-      if (useBackendKanban && currentBoard) {
-        // Atualizar o board para refletir a nova coluna
-        if (goalId) {
-          kanbanService.getBoardByGoal(goalId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(null); // Limpar qualquer board específico
-          });
-        } else if (boardId) {
-          kanbanService.getBoardById(boardId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(updatedBoard);
-          });
-        }
-      } else {
-        fetchLocalTasks();
-      }
-    },
-    onColumnUpdated: (column) => {
-      console.log("useTasksView: onColumnUpdated - refreshing board data", column);
-      if (useBackendKanban && currentBoard) {
-        // Atualizar o board para refletir as mudanças na coluna
-        if (goalId) {
-          kanbanService.getBoardByGoal(goalId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(null); // Limpar qualquer board específico
-          });
-        } else if (boardId) {
-          kanbanService.getBoardById(boardId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(updatedBoard);
-          });
-        }
-      } else {
-        fetchLocalTasks();
-      }
-    },
-    onColumnDeleted: (columnId) => {
-      console.log("useTasksView: onColumnDeleted - refreshing board data", columnId);
-      if (useBackendKanban && currentBoard) {
-        // Atualizar o board para refletir a remoção da coluna
-        if (goalId) {
-          kanbanService.getBoardByGoal(goalId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(null); // Limpar qualquer board específico
-          });
-        } else if (boardId) {
-          kanbanService.getBoardById(boardId).then(({ board: updatedBoard }) => {
-            setSpecificBoard(updatedBoard);
-          });
-        }
-      } else {
-        fetchLocalTasks();
       }
     },
     onBoardUpdated: (updatedBoard) => {
-      console.log("useTasksView: onBoardUpdated - updating board data", updatedBoard);
-      if (useBackendKanban) {
-        if (goalId && updatedBoard.goal?.id === goalId) {
-          // Atualizando quadro por meta
-          setSpecificBoard(null);
-        } else if (boardId && updatedBoard.id === boardId) {
-          // Atualizando quadro específico
-          setSpecificBoard(updatedBoard);
-        }
-      } else {
-        fetchLocalTasks();
+      // Apenas atualizar se for exatamente o board que estamos visualizando
+      if (useBackendKanban && boardId && updatedBoard?.id === boardId) {
+        setSpecificBoard(updatedBoard);
+        console.log("useTasksView: Board específico atualizado via evento");
       }
     }
   });
@@ -466,12 +604,14 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
     setNewColumnTitle,
     selectedSlotData,
     setSelectedSlotData,
-      // Dados computados
+      
+    // Dados computados
     columns,
     tasks, // Tarefas para kanban (filtradas por goalId se usando backend)
     allTasksForCalendar, // Tarefas para calendário (sempre todas)
     useBackendKanban,
-      // Estados do Kanban
+      
+    // Estados do Kanban
     board: currentBoard,
     kanbanLoading: currentLoading,
     kanbanError: currentError,
@@ -487,15 +627,15 @@ export const useTasksView = (goalId: string | null, boardId?: string | null) => 
     setLocalColumns,
     localTasks,
     setLocalTasks,
-    
+      
     // Funções auxiliares
     moveTaskByStatus,
     fetchLocalTasks,
-      // Funções do TaskProvider
+    handleOptimisticTaskMove,
+      
+    // Funções do TaskProvider
     createTaskFromProvider: createTaskFromProviderWithGoal,
     deleteTaskFromProvider,
     moveTaskToColumnProvider,
   };
 };
-
-export type { ColumnType, TaskItem, SlotData };
