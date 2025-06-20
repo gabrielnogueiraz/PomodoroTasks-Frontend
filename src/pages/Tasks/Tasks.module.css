@@ -209,7 +209,7 @@
   text-align: center;
 }
 
-/* Board */
+/* Board - Corrigido para KanbanBoard */
 .board {
   position: relative;
   z-index: 2;
@@ -219,6 +219,7 @@
   min-height: calc(100vh - 10rem);
   padding: 0.5rem 0 1.5rem 0;
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 .board::-webkit-scrollbar {
@@ -1009,6 +1010,111 @@
 .modernCancelButton:hover {
   background: rgba(30, 35, 50, 0.9);
   color: #f1f5f9;
+}
+
+/* Estilos específicos para KanbanBoard integration */
+.addColumnContainer {
+  display: flex;
+  align-items: flex-start;
+  min-width: 280px;
+  margin-left: 20px;
+}
+
+.addColumnButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 120px;
+  justify-content: center;
+  width: 100%;
+}
+
+.addColumnButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.addColumnIcon {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.newColumnContainer {
+  min-width: 280px;
+  margin-left: 20px;
+}
+
+.newColumn {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.newColumnInput {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.newColumnInput:focus {
+  outline: none;
+  border-color: rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+.newColumnInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.newColumnActions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirmButton,
+.cancelButton {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmButton {
+  background: #10b981;
+  color: white;
+}
+
+.confirmButton:hover {
+  background: #059669;
+}
+
+.cancelButton {
+  background: rgba(239, 68, 68, 0.8);
+  color: white;
+}
+
+.cancelButton:hover {
+  background: rgba(220, 38, 38, 0.9);
 }
 
 /* Responsividade */
