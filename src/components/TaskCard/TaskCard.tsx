@@ -1,7 +1,6 @@
 import React from "react";
 import styles from "../../pages/Tasks/Tasks.module.css";
 import { Task } from "../../services/taskService";
-import { useDrag } from "react-dnd";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
@@ -11,21 +10,16 @@ interface TaskItem extends Task {
 
 interface TaskCardProps {
   task: TaskItem;
-  moveTask: (taskId: string, fromColumn: string, toColumn: string) => Promise<void>;
+  moveTask?: (taskId: string, fromColumn: string, toColumn: string) => Promise<void>;
   onDeleteTask: (taskId: string, e: React.MouseEvent) => void;
   onCompleteTask?: (taskId: string, e: React.MouseEvent) => void;
 }
 
+// DEPRECATED: Este componente foi substituído pelo KanbanBoard
+// Mantido apenas para compatibilidade com código legado
 const TaskCard: React.FC<TaskCardProps> = ({ task, moveTask, onDeleteTask, onCompleteTask }) => {
   const ref = React.useRef<HTMLDivElement>(null);
 
-  const [{ isDragging }, connectDrag] = useDrag({
-    type: "TASK",
-    item: { id: task.id, columnId: task.columnId },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  });
   const priorityClass = `priority${
     task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium'
   }`;
@@ -42,13 +36,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, moveTask, onDeleteTask, onCom
 
   const isCompleted = task.status === "completed";
 
-  connectDrag(ref);
   return (
     <div
       ref={ref}
-      className={`${styles.taskCard} ${isDragging ? styles.dragging : ""} ${
+      className={`${styles.taskCard} ${
         isCompleted ? styles.completedTask : ""
-      }`}
+      } ${styles[priorityClass]}`}
     >
       <div className={styles.taskHeader}>
         <h3>{task.title}</h3>
@@ -81,7 +74,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, moveTask, onDeleteTask, onCom
         <p className={styles.taskDescription}>{task.description}</p>
       )}
 
-      {/* Informações de data e horário */}
       {(task.startDate || task.endDate || task.startTime || task.endTime) && (
         <div className={styles.taskSchedule}>
           {task.startDate && (
