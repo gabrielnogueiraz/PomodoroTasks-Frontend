@@ -14,11 +14,29 @@ interface RealtimeSyncOptions {
 
 export const useRealtimeSync = (options: RealtimeSyncOptions) => {
   const optionsRef = useRef(options);
+  const throttleTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   
   // Atualizar referência sempre que as opções mudarem
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
+  // Função para throttle de eventos - versão otimizada
+  const throttledExecution = useCallback((eventType: string, callback: () => void, delay: number = 500) => {
+    // Limpar timeout anterior se existir
+    const existingTimeout = throttleTimeouts.current.get(eventType);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Criar novo timeout com delay maior para reduzir requisições
+    const newTimeout = setTimeout(() => {
+      callback();
+      throttleTimeouts.current.delete(eventType);
+    }, delay);
+
+    throttleTimeouts.current.set(eventType, newTimeout);
+  }, []);
+  
   // Função para disparar evento personalizado
   const dispatchTaskEvent = useCallback((eventType: string, detail: any) => {
     try {
@@ -34,66 +52,74 @@ export const useRealtimeSync = (options: RealtimeSyncOptions) => {
   }, []);
 
   // Configurar listeners de eventos
-  useEffect(() => {    // Handlers para tarefas - com validação adicionada
+  useEffect(() => {    // Handlers para tarefas - com validação e throttling otimizado
     const handleTaskCreated = (event: CustomEvent) => {
-      try {
-        if (event.detail) {
-          optionsRef.current.onTaskCreated?.(event.detail);
-        } else {
-          console.warn("useRealtimeSync: Evento taskCreated recebido sem dados");
+      throttledExecution('taskCreated', () => {
+        try {
+          if (event.detail) {
+            optionsRef.current.onTaskCreated?.(event.detail);
+          } else {
+            console.warn("useRealtimeSync: Evento taskCreated recebido sem dados");
+          }
+        } catch (error) {
+          console.error("useRealtimeSync: Erro ao processar taskCreated", error);
         }
-      } catch (error) {
-        console.error("useRealtimeSync: Erro ao processar taskCreated", error);
-      }
+      }, 600); // Aumentado para 600ms
     };
 
     const handleTaskUpdated = (event: CustomEvent) => {
-      try {
-        if (event.detail) {
-          optionsRef.current.onTaskUpdated?.(event.detail);
-        } else {
-          console.warn("useRealtimeSync: Evento taskUpdated recebido sem dados");
+      throttledExecution('taskUpdated', () => {
+        try {
+          if (event.detail) {
+            optionsRef.current.onTaskUpdated?.(event.detail);
+          } else {
+            console.warn("useRealtimeSync: Evento taskUpdated recebido sem dados");
+          }
+        } catch (error) {
+          console.error("useRealtimeSync: Erro ao processar taskUpdated", error);
         }
-      } catch (error) {
-        console.error("useRealtimeSync: Erro ao processar taskUpdated", error);
-      }
+      }, 600); // Aumentado para 600ms
     };
 
     const handleTaskDeleted = (event: CustomEvent) => {
-      try {
-        if (event.detail && event.detail.taskId) {
-          optionsRef.current.onTaskDeleted?.(event.detail.taskId);
-        } else {
-          console.warn("useRealtimeSync: Evento taskDeleted recebido sem taskId válido");
+      throttledExecution('taskDeleted', () => {
+        try {
+          if (event.detail && event.detail.taskId) {
+            optionsRef.current.onTaskDeleted?.(event.detail.taskId);
+          } else {
+            console.warn("useRealtimeSync: Evento taskDeleted recebido sem taskId válido");
+          }
+        } catch (error) {
+          console.error("useRealtimeSync: Erro ao processar taskDeleted", error);
         }
-      } catch (error) {
-        console.error("useRealtimeSync: Erro ao processar taskDeleted", error);
-      }
+      }, 400); // Menor delay para exclusões
     };
 
     const handleTasksRefreshed = (event: CustomEvent) => {
-      try {
-        if (event.detail) {
-          optionsRef.current.onTasksRefreshed?.(event.detail);
-        } else {
-          console.warn("useRealtimeSync: Evento tasksRefreshed recebido sem dados");
+      throttledExecution('tasksRefreshed', () => {
+        try {
+          if (event.detail) {
+            optionsRef.current.onTasksRefreshed?.(event.detail);
+          } else {
+            console.warn("useRealtimeSync: Evento tasksRefreshed recebido sem dados");
+          }        } catch (error) {
+          console.error("useRealtimeSync: Erro ao processar tasksRefreshed", error);
         }
-      } catch (error) {
-        console.error("useRealtimeSync: Erro ao processar tasksRefreshed", error);
-      }
+      }, 1000); // Aumentado para 1 segundo para evitar múltiplas atualizações
     };
-    
-    const handleTaskMoved = (event: CustomEvent) => {
-      try {
-        if (event.detail && event.detail.taskId && event.detail.columnId) {
-          optionsRef.current.onTaskMoved?.(event.detail);
-        } else {
-          console.warn("useRealtimeSync: Evento taskMoved recebido sem dados válidos", event.detail);
+      const handleTaskMoved = (event: CustomEvent) => {
+      throttledExecution('taskMoved', () => {
+        try {
+          if (event.detail && event.detail.taskId && event.detail.columnId) {
+            optionsRef.current.onTaskMoved?.(event.detail);
+          } else {
+            console.warn("useRealtimeSync: Evento taskMoved recebido sem dados válidos", event.detail);
+          }
+        } catch (error) {
+          console.error("useRealtimeSync: Erro ao processar taskMoved", error);
         }
-      } catch (error) {
-        console.error("useRealtimeSync: Erro ao processar taskMoved", error);
-      }
-    };    // Handlers para colunas e boards - com validação adicionada
+      }, 800); // Aumentado para 800ms para reduzir tremor
+    };// Handlers para colunas e boards - com validação adicionada
     const handleColumnCreated = (event: CustomEvent) => {
       try {
         if (event.detail) {
