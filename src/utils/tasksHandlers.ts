@@ -20,8 +20,7 @@ interface TaskHandlersConfig {
   localTasks: Record<string, TaskItem>;
   useBackendKanban: boolean;
   board?: any;
-  
-  // Funções
+    // Funções
   moveTaskByStatus: (taskId: string, status: TaskStatus) => Promise<void>;
   fetchLocalTasks: () => Promise<void>;
   createTaskFromProvider: (
@@ -33,7 +32,7 @@ interface TaskHandlersConfig {
     startTime?: string,
     endTime?: string,
     columnId?: string
-  ) => Promise<void>;
+  ) => Promise<Task>;
   deleteTaskFromProvider: (taskId: string) => Promise<void>;
   createColumn?: (boardId: string, data: any) => Promise<any>;
   updateColumn?: (columnId: string, data: any) => Promise<any>;
@@ -192,8 +191,7 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
   const handleAddTask = (columnId: string) => {
     setActiveColumnId(columnId);
     setShowTaskForm(true);
-  };
-  // Manipulador para criar tarefa
+  };  // Manipulador para criar tarefa - OTIMIZADO para aparecer em tempo real
   const handleCreateTask = async (
     columnId: string,
     taskData: {
@@ -208,6 +206,8 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
     selectedSlotData?: SlotData | null
   ) => {
     try {
+      console.log("Criando nova tarefa:", taskData);
+
       // Usar dados do slot selecionado se disponível
       const finalTaskData = {
         ...taskData,
@@ -217,8 +217,8 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
         endTime: taskData.endTime || selectedSlotData?.endTime,
       };
 
-      // Criar a tarefa usando TaskProvider
-      await createTaskFromProvider(
+      // Criar a tarefa usando TaskProvider (que já atualiza o estado local)
+      const newTask = await createTaskFromProvider(
         finalTaskData.title,
         finalTaskData.priority,
         finalTaskData.description || "",
@@ -229,10 +229,12 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
         columnId
       );
 
-      // Recarregar tarefas para pegar a tarefa criada
-      await fetchLocalTasks();
+      console.log("Nova tarefa criada:", newTask);
 
-      console.log('Nova tarefa criada');
+      // APENAS fetchLocal se for sistema local (não backend Kanban)
+      if (!useBackendKanban) {
+        await fetchLocalTasks();
+      }
 
       // Limpar dados do slot selecionado
       setSelectedSlotData(null);
@@ -240,6 +242,8 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
       // Fechar modal
       setShowTaskForm(false);
       setActiveColumnId(null);
+
+      console.log("Tarefa criada com sucesso");
     } catch (error) {
       console.error("Erro ao criar tarefa:", error);
       alert("Não foi possível criar a tarefa. Por favor, tente novamente.");
@@ -369,17 +373,22 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
       console.error("Erro ao excluir coluna:", error);
       alert("Não foi possível excluir a coluna. Por favor, tente novamente.");
     }
-  };
+  };  // Manipuladores para ações diretas das tarefas no Kanban - OTIMIZADOS
+  const handleDeleteTask = async (taskId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
 
-  // Manipuladores para ações diretas das tarefas no Kanban
-  const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+    if (!window.confirm("Tem certeza que deseja excluir esta tarefa?")) {
+      return;
+    }
 
     try {
+      console.log("Deletando tarefa:", taskId);
       await deleteTaskFromProvider(taskId);
 
       if (!useBackendKanban) {
-        // Atualizar estado local
+        // Atualizar estado local imediatamente
         const updatedColumns = localColumns.map((column) => ({
           ...column,
           taskIds: column.taskIds.filter((id) => id !== taskId),
@@ -390,28 +399,40 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
 
         setLocalColumns(updatedColumns);
         setLocalTasks(updatedTasks);
+        
+        // Fetch apenas para sistemas locais
+        await fetchLocalTasks();
       }
+
+      console.log("Tarefa deletada com sucesso");
     } catch (error) {
       console.error("Erro ao excluir tarefa:", error);
       alert("Não foi possível excluir a tarefa. Por favor, tente novamente.");
     }
   };
 
-  const handleCompleteTask = async (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCompleteTask = async (taskId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
 
     try {
       const task = tasks[taskId];
-      if (!task) return;
+      if (!task) {
+        console.error("Tarefa não encontrada:", taskId);
+        return;
+      }
 
       const newStatus: TaskStatus = task.status === "completed" ? "pending" : "completed";
+      console.log("Alterando status da tarefa:", taskId, "para:", newStatus);
+      
       await moveTaskByStatus(taskId, newStatus);
 
       if (!useBackendKanban) {
         // Determinar nova coluna baseada no status
         let newColumnId = newStatus === "completed" ? "col-3" : "col-1";
 
-        // Atualizar estado local
+        // Atualizar estado local imediatamente
         const updatedColumns = localColumns.map((column) => {
           const filteredTaskIds = column.taskIds.filter((id) => id !== taskId);
 
@@ -439,7 +460,12 @@ export const createTaskHandlers = (config: TaskHandlersConfig) => {
 
         setLocalColumns(updatedColumns);
         setLocalTasks(updatedTasks);
+        
+        // Fetch apenas para sistemas locais
+        await fetchLocalTasks();
       }
+
+      console.log("Status da tarefa alterado com sucesso");
     } catch (error) {
       console.error("Erro ao alterar status da tarefa:", error);
       alert("Não foi possível alterar o status da tarefa. Por favor, tente novamente.");
